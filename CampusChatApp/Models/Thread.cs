@@ -1,13 +1,17 @@
-namespace CampusChatApp.Models;
+namespace CampusChat.Models;
 
 public class Thread
 {
     public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string Category { get; set; } = string.Empty;
+
+    public string Name { get; set; } = string.Empty;
+
+    // True if the thread is private
     public bool IsPrivate { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Required only for private threads
+    public string? AccessCode { get; set; }
+
+    // All posts inside the thread
     public List<Post> Posts { get; set; } = new();
-    public List<User> Members { get; set; } = new();
 }

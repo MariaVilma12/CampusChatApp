@@ -1,10 +1,15 @@
-namespace CampusChatApp.Models;
+namespace CampusChat.Models;
 
 public class DirectChat
 {
     public int Id { get; set; }
-    public User ParticipantOne { get; set; } = new();
-    public User ParticipantTwo { get; set; } = new();
+
+    // First participant
+    public int User1Id { get; set; }
+
+    // Second participant
+    public int User2Id { get; set; }
+
+    // Conversation messages
     public List<ChatMessage> Messages { get; set; } = new();
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
