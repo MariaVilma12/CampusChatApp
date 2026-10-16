@@ -1,0 +1,13 @@
+@page "/threads"
+@layout MainLayout
+
+<PageTitle>Threads</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Threads</h1>
+        <a class="btn btn-primary" href="/threads/create">New thread</a>
+    </div>
+    <ThreadSearch />
+    <CampusChatApp.Components.Threads.ThreadList />
+</div>

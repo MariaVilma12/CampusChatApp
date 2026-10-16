@@ -1,0 +1,18 @@
+@page "/chats/{id:int}"
+@layout MainLayout
+
+<PageTitle>Chat Details</PageTitle>
+
+<div class="container py-4">
+    <h1>Private chat</h1>
+    <div class="card shadow-sm p-3 mb-3">
+        <ChatMessage />
+        <ChatMessage />
+    </div>
+    <ChatInput />
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+}

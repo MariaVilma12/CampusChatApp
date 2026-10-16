@@ -1,0 +1,32 @@
+@page "/home"
+@layout MainLayout
+
+<PageTitle>CampusChat</PageTitle>
+
+<Header />
+
+<div class="container-fluid">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <PostEditor />
+            <PostCard />
+            <PostCard />
+            <EmptyPostMessage />
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h5">Popular threads</h2>
+                    <CampusChatApp.Components.Threads.ThreadList />
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">Direct chats</h2>
+                    <ChatCard />
+                    <ChatCard />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

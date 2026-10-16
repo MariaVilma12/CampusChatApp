@@ -1,0 +1,23 @@
+@page "/threads/{id:int}"
+@layout MainLayout
+
+<PageTitle>Thread Details</PageTitle>
+
+<div class="container py-4">
+    <h1>Thread Details</h1>
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="h4">Campus event planning</h2>
+            <p>Details for thread #@Id.</p>
+        </div>
+    </div>
+
+    <PostEditor />
+    <PostCard />
+    <ReplyCard />
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+}
