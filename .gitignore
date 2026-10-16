@@ -3,3 +3,25 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Build folders
+bin/
+obj/
+
+# User settings
+*.user
+*.rsuser
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
