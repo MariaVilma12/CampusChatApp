@@ -1,27 +1,46 @@
 @page "/signin"
-@layout MainLayout
+
+@using CampusChat.Models
+@using CampusChat.Services
+
+@inject UserService UserService
+@inject SessionService SessionService
+@inject NavigationManager Navigation
 
 <PageTitle>Sign In</PageTitle>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body p-4">
-                    <h1 class="h3 mb-3">Welcome back</h1>
-                    <form>
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" placeholder="student@campus.edu" />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-control" placeholder="Enter password" />
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Sign in</button>
-                    </form>
-                </div>
-            </div>
+<h3>Sign In</h3>
+
+<p>Select a user:</p>
+
+@if (users == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    @foreach (var user in users)
+    {
+        <div style="margin-bottom:10px;">
+            <button class="btn btn-primary"
+                    @onclick="() => SignInUser(user)">
+                @user.DisplayName
+            </button>
         </div>
-    </div>
-</div>
+    }
+}
+
+@code {
+    private IReadOnlyList<User>? users;
+
+    protected override void OnInitialized()
+    {
+        users = UserService.GetAllUsers();
+    }
+
+    private async Task SignInUser(User user)
+    {
+        await SessionService.SetCurrentUserAsync(user);
+        Navigation.NavigateTo("/");
+    }
+}

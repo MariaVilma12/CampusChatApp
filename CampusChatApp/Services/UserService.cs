@@ -1,17 +1,24 @@
-using CampusChatApp.Models;
+using CampusChat.Data;
+using CampusChat.Models;
 
-namespace CampusChatApp.Services;
+namespace CampusChat.Services;
 
 public class UserService
 {
-    private readonly List<User> _users = new();
-
-    public IReadOnlyList<User> GetUsers() => _users;
-
-    public User AddUser(User user)
+    /// <summary>
+    /// Returns all users.
+    /// </summary>
+    public IReadOnlyList<User> GetAllUsers()
     {
-        user.Id = _users.Count == 0 ? 1 : _users.Max(u => u.Id) + 1;
-        _users.Add(user);
-        return user;
+        return SeedData.Users;
+    }
+
+    /// <summary>
+    /// Returns a user by ID.
+    /// Returns null if no matching user exists.
+    /// </summary>
+    public User? GetUser(int id)
+    {
+        return SeedData.Users.FirstOrDefault(u => u.Id == id);
     }
 }

@@ -1,19 +1,39 @@
-using CampusChatApp.Models;
+using CampusChat.Data;
+using CampusChat.Models;
+using ThreadModel = CampusChat.Models.Thread;
 
-namespace CampusChatApp.Services;
+namespace CampusChat.Services;
 
 public class ThreadService
 {
-    private readonly List<CampusChatApp.Models.Thread> _threads = new();
-
-    public IReadOnlyList<CampusChatApp.Models.Thread> GetThreads() => _threads;
-
-    public CampusChatApp.Models.Thread AddThread(CampusChatApp.Models.Thread thread)
+    /// <summary>
+    /// Returns every thread.
+    /// </summary>
+    public IReadOnlyList<ThreadModel> GetAllThreads()
     {
-        thread.Id = _threads.Count == 0 ? 1 : _threads.Max(t => t.Id) + 1;
-        _threads.Add(thread);
-        return thread;
+        return SeedData.Threads;
     }
 
-    public CampusChatApp.Models.Thread? GetThreadById(int id) => _threads.FirstOrDefault(t => t.Id == id);
+    /// <summary>
+    /// Returns one thread.
+    /// Returns null if the thread does not exist.
+    /// </summary>
+    public ThreadModel? GetThread(int id)
+    {
+        return SeedData.Threads.FirstOrDefault(t => t.Id == id);
+    }
+
+    /// <summary>
+    /// Searches thread names.
+    /// Returns an empty list if nothing matches.
+    /// </summary>
+    public IReadOnlyList<ThreadModel> SearchThreads(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return SeedData.Threads;
+
+        return SeedData.Threads
+            .Where(t => t.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
 }

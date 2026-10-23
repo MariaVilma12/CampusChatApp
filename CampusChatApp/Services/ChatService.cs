@@ -1,26 +1,26 @@
-using CampusChatApp.Models;
+using CampusChat.Models;
 
-namespace CampusChatApp.Services;
+namespace CampusChat.Services;
 
 public class ChatService
 {
     private readonly List<DirectChat> _chats = new();
 
-    public IReadOnlyList<DirectChat> GetChats() => _chats;
-
-    public DirectChat AddChat(DirectChat chat)
+    /// <summary>
+    /// Returns every direct chat.
+    /// Returns an empty list if there are no chats.
+    /// </summary>
+    public IReadOnlyList<DirectChat> GetAllChats()
     {
-        chat.Id = _chats.Count == 0 ? 1 : _chats.Max(c => c.Id) + 1;
-        _chats.Add(chat);
-        return chat;
+        return _chats;
     }
 
-    public void AddMessage(int chatId, ChatMessage message)
+    /// <summary>
+    /// Returns a chat by ID.
+    /// Returns null if it does not exist.
+    /// </summary>
+    public DirectChat? GetChat(int id)
     {
-        var chat = _chats.FirstOrDefault(c => c.Id == chatId);
-        if (chat is null) return;
-
-        chat.Messages.Add(message);
-        chat.UpdatedAt = DateTime.UtcNow;
+        return _chats.FirstOrDefault(c => c.Id == id);
     }
 }

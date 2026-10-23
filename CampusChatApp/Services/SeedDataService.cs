@@ -1,13 +1,12 @@
-using CampusChatApp.Data;
+using CampusChat.Data;
 
-namespace CampusChatApp.Services;
+namespace CampusChat.Services;
 
 public class SeedDataService
 {
     public static void Initialize()
     {
-        SeedUsers.Initialize();
-        SeedThreads.Initialize();
-        SeedChats.Initialize();
+        _ = SeedData.Users;
+        _ = SeedData.Threads;
     }
 }
