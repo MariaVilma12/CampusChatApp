@@ -1,23 +1,63 @@
 @page "/threads/{id:int}"
 @layout MainLayout
+@using CampusChat.Services
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject ThreadService ThreadService
 
 <PageTitle>Thread Details</PageTitle>
 
-<div class="container py-4">
-    <h1>Thread Details</h1>
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h2 class="h4">Campus event planning</h2>
-            <p>Details for thread #@Id.</p>
-        </div>
+@if (currentUser is null)
+{
+    <div class="container py-4">
+        <div class="alert alert-warning">Please sign in to view this thread.</div>
     </div>
+}
+else if (thread is null)
+{
+    <div class="container py-4">
+        <div class="alert alert-danger">Thread not found.</div>
+    </div>
+}
+else if (!SessionService.CanAccessThread(thread, currentUser))
+{
+    <div class="container py-4">
+        <div class="alert alert-warning">You do not have access to this private thread.</div>
+    </div>
+}
+else
+{
+    <div class="container py-4">
+        <h1>Thread Details</h1>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h4">@thread.Name</h2>
+                <p>Details for thread #@Id.</p>
+            </div>
+        </div>
 
-    <PostEditor />
-    <PostCard />
-    <ReplyCard />
-</div>
+        @if (!thread.Posts.Any())
+        {
+            <div class="alert alert-info">This thread has no posts yet.</div>
+        }
+
+        <PostEditor />
+        <PostCard />
+        <ReplyCard />
+    </div>
+}
 
 @code {
     [Parameter]
     public int Id { get; set; }
+
+    private User? currentUser;
+    private CampusChatApp.Models.Thread? thread;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await SessionService.GetCurrentUserAsync();
+        thread = ThreadService.GetThread(Id);
+    }
 }

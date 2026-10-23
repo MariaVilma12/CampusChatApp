@@ -1,8 +1,8 @@
-using CampusChat.Data;
-using CampusChat.Models;
-using ThreadModel = CampusChat.Models.Thread;
+using CampusChatApp.Data;
+using CampusChatApp.Models;
+using ThreadModel = CampusChatApp.Models.Thread;
 
-namespace CampusChat.Services;
+namespace CampusChatApp.Services;
 
 public class ThreadService
 {

@@ -1,4 +1,4 @@
-namespace CampusChat.Models;
+namespace CampusChatApp.Models;
 
 public class Post
 {

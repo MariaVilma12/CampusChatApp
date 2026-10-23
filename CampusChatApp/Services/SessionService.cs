@@ -1,7 +1,10 @@
-using CampusChat.Models;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
-namespace CampusChat.Services;
+using CampusChat.Services;
+using CampusChatApp.Models;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using ThreadModel = CampusChatApp.Models.Thread;
+
+namespace CampusChatApp.Services;
 
 public class SessionService
 {
@@ -23,7 +26,6 @@ public class SessionService
     public async Task SetCurrentUserAsync(User user)
     {
         CurrentUser = user;
-
         await _storage.SetAsync(SessionKey, user.Id);
     }
 
@@ -40,6 +42,32 @@ public class SessionService
         }
 
         return CurrentUser;
+    }
+
+    public bool IsAuditUser(User? user) => user?.IsAuditUser == true;
+
+    public bool CanAccessThread(ThreadModel? thread, User? user = null)
+    {
+        if (thread is null)
+            return false;
+
+        var currentUser = user ?? CurrentUser;
+        if (currentUser?.IsAuditUser == true)
+            return true;
+
+        return !thread.IsPrivate || currentUser != null && currentUser.JoinedThreadIds.Contains(thread.Id);
+    }
+
+    public bool CanAccessChat(DirectChat? chat, User? user = null)
+    {
+        if (chat is null)
+            return false;
+
+        var currentUser = user ?? CurrentUser;
+        if (currentUser?.IsAuditUser == true)
+            return true;
+
+        return currentUser != null && (chat.User1Id == currentUser.Id || chat.User2Id == currentUser.Id);
     }
 
     public async Task LogoutAsync()

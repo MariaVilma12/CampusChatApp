@@ -1,6 +1,6 @@
-using CampusChat.Data;
+using CampusChatApp.Data;
 
-namespace CampusChat.Services;
+namespace CampusChatApp.Services;
 
 public class SeedDataService
 {

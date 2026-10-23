@@ -1,5 +1,5 @@
-using CampusChat.Data;
-using CampusChat.Models;
+using CampusChatApp.Data;
+using CampusChatApp.Models;
 
 namespace CampusChat.Services;
 

@@ -1,18 +1,61 @@
 @page "/chats/{id:int}"
 @layout MainLayout
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject ChatService ChatService
 
 <PageTitle>Chat Details</PageTitle>
 
-<div class="container py-4">
-    <h1>Private chat</h1>
-    <div class="card shadow-sm p-3 mb-3">
-        <ChatMessage />
-        <ChatMessage />
+@if (currentUser is null)
+{
+    <div class="container py-4">
+        <div class="alert alert-warning">Please sign in to view this chat.</div>
     </div>
-    <ChatInput />
-</div>
+}
+else if (chat is null)
+{
+    <div class="container py-4">
+        <div class="alert alert-danger">Chat not found.</div>
+    </div>
+}
+else if (!SessionService.CanAccessChat(chat, currentUser))
+{
+    <div class="container py-4">
+        <div class="alert alert-warning">You do not have access to this direct chat.</div>
+    </div>
+}
+else
+{
+    <div class="container py-4">
+        <h1>Private chat</h1>
+        <div class="card shadow-sm p-3 mb-3">
+            @if (!chat.Messages.Any())
+            {
+                <div class="alert alert-info">This chat has no messages yet.</div>
+            }
+            else
+            {
+                foreach (var message in chat.Messages)
+                {
+                    <ChatMessage />
+                }
+            }
+        </div>
+        <ChatInput />
+    </div>
+}
 
 @code {
     [Parameter]
     public int Id { get; set; }
+
+    private User? currentUser;
+    private DirectChat? chat;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await SessionService.GetCurrentUserAsync();
+        chat = ChatService.GetChat(Id);
+    }
 }

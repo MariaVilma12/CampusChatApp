@@ -1,25 +1,26 @@
 @page "/signin"
 
-@using CampusChat.Models
 @using CampusChat.Services
+@using CampusChatApp.Models
+@using CampusChatApp.Services
 
 @inject UserService UserService
 @inject SessionService SessionService
 @inject NavigationManager Navigation
 
-<PageTitle>Sign In</PageTitle>
+
 
 <h3>Sign In</h3>
 
 <p>Select a user:</p>
 
-@if (users == null)
+@if (_users == null)
 {
     <p>Loading...</p>
 }
 else
 {
-    @foreach (var user in users)
+    @foreach (var user in _users)
     {
         <div style="margin-bottom:10px;">
             <button class="btn btn-primary"
@@ -31,11 +32,11 @@ else
 }
 
 @code {
-    private IReadOnlyList<User>? users;
+    private IReadOnlyList<User>? _users;
 
     protected override void OnInitialized()
     {
-        users = UserService.GetAllUsers();
+        _users = UserService.GetAllUsers();
     }
 
     private async Task SignInUser(User user)

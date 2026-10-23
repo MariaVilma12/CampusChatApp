@@ -1,6 +1,6 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">CampusChatApp</a>
+        <a class="navbar-brand" href="/">Campus Chat</a>
     </div>
 </div>
 
@@ -8,23 +8,41 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
+
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            <NavLink class="nav-link" href="/home">
+                <span class="bi bi-house-door-fill me-2"></span>
+                Home
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="/profile">
+                <span class="bi bi-person-fill me-2"></span>
+                Profile
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link" href="/threads">
+                <span class="bi bi-chat-left-text-fill me-2"></span>
+                Threads
             </NavLink>
         </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/chats">
+                <span class="bi bi-envelope-fill me-2"></span>
+                Direct Chats
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/signin">
+                <span class="bi bi-box-arrow-right me-2"></span>
+                Sign Out
+            </NavLink>
+        </div>
+
     </nav>
 </div>
-
