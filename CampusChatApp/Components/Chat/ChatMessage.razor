@@ -1,6 +1,13 @@
 @namespace CampusChatApp.Components.Chat
+@using CampusChatApp.Models
+@using ChatMessageModel = CampusChatApp.Models.ChatMessage
 
 <div class="mb-3">
-    <div class="small text-muted">Student Name</div>
-    <div class="p-2 rounded bg-light">Sample chat message content.</div>
+    <div class="small text-muted">@Message.SenderName</div>
+    <div class="p-2 rounded bg-light">@Message.Text</div>
 </div>
+
+@code {
+    [Parameter]
+    public ChatMessageModel Message { get; set; } = new();
+}

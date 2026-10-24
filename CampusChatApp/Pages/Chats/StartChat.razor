@@ -1,15 +1,94 @@
 @page "/chats/start"
 @layout MainLayout
+@using CampusChat.Services
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject UserService UserService
+@inject ChatService ChatService
+@inject SessionService SessionService
+@inject NavigationManager Navigation
 
 <PageTitle>Start Chat</PageTitle>
 
 <div class="container py-4">
     <h1>Start a direct chat</h1>
-    <form class="card shadow-sm p-3">
-        <div class="mb-3">
-            <label class="form-label">Recipient</label>
-            <input class="form-control" placeholder="Search for a student" />
+
+    @if (currentUser is null)
+    {
+        <div class="alert alert-warning">Please sign in to start a chat.</div>
+    }
+    else
+    {
+        <div class="card shadow-sm p-3">
+            <div class="mb-3">
+                <label class="form-label">Recipient</label>
+                <input class="form-control" @bind="searchText" @bind:event="oninput" placeholder="Search for a student" />
+            </div>
+
+            @if (string.IsNullOrWhiteSpace(searchText))
+            {
+                <div class="alert alert-info">Search for a student to start a chat.</div>
+            }
+            else
+            {
+                var matches = UserService.GetAllUsers()
+                    .Where(u => u.Id != currentUser.Id && u.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (matches.Count == 0)
+                {
+                    <div class="alert alert-info">No student matches your search.</div>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (var user in matches)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>@user.DisplayName</span>
+                                <button class="btn btn-sm btn-primary" @onclick="() => CreateChat(user)">Start</button>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
         </div>
-        <button type="submit" class="btn btn-primary">Start conversation</button>
-    </form>
+    }
 </div>
+
+@code {
+    private User? currentUser;
+    private string searchText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await SessionService.GetCurrentUserAsync();
+    }
+
+    private void CreateChat(User recipient)
+    {
+        if (currentUser is null)
+            return;
+
+        var existing = ChatService.GetAllChats()
+            .FirstOrDefault(c =>
+                (c.User1Id == currentUser.Id && c.User2Id == recipient.Id) ||
+                (c.User1Id == recipient.Id && c.User2Id == currentUser.Id));
+
+        if (existing is not null)
+        {
+            Navigation.NavigateTo($"/chats/{existing.Id}");
+            return;
+        }
+
+        var chat = new DirectChat
+        {
+            User1Id = currentUser.Id,
+            User2Id = recipient.Id,
+            Messages = new List<CampusChatApp.Models.ChatMessage>()
+        };
+
+        var created = ChatService.AddChat(chat);
+        Navigation.NavigateTo($"/chats/{created.Id}");
+    }
+}

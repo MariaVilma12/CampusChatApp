@@ -1,44 +1,75 @@
 
 using CampusChat.Services;
 using CampusChatApp.Models;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.JSInterop;
 using ThreadModel = CampusChatApp.Models.Thread;
 
 namespace CampusChatApp.Services;
 
 public class SessionService
 {
-    private const string SessionKey = "CurrentUserId";
+    private const string BrowserStorageKeyPrefix = "campus-chat-current-user";
 
-    private readonly ProtectedSessionStorage _storage;
+    private readonly IJSRuntime _jsRuntime;
     private readonly UserService _userService;
 
     public User? CurrentUser { get; private set; }
 
     public SessionService(
-        ProtectedSessionStorage storage,
+        IJSRuntime jsRuntime,
         UserService userService)
     {
-        _storage = storage;
+        _jsRuntime = jsRuntime;
         _userService = userService;
+    }
+
+    private async Task<string> GetStorageKeyAsync()
+    {
+        try
+        {
+            var windowId = await _jsRuntime.InvokeAsync<string?>("eval", "window.name || ''");
+            if (string.IsNullOrWhiteSpace(windowId))
+            {
+                windowId = Guid.NewGuid().ToString("N");
+                await _jsRuntime.InvokeVoidAsync("eval", $"window.name = '{windowId}';");
+            }
+
+            return $"{BrowserStorageKeyPrefix}-{windowId}";
+        }
+        catch
+        {
+            return BrowserStorageKeyPrefix;
+        }
     }
 
     public async Task SetCurrentUserAsync(User user)
     {
         CurrentUser = user;
-        await _storage.SetAsync(SessionKey, user.Id);
+
+        try
+        {
+            var key = await GetStorageKeyAsync();
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", key, user.Id.ToString());
+        }
+        catch
+        {
+            // Ignore JS interop failures during prerender/static setup.
+        }
     }
 
     public async Task<User?> GetCurrentUserAsync()
     {
-        if (CurrentUser != null)
-            return CurrentUser;
-
-        var result = await _storage.GetAsync<int>(SessionKey);
-
-        if (result.Success)
+        try
         {
-            CurrentUser = _userService.GetUser(result.Value);
+            var key = await GetStorageKeyAsync();
+            var storedValue = await _jsRuntime.InvokeAsync<string?>("sessionStorage.getItem", key);
+            CurrentUser = string.IsNullOrWhiteSpace(storedValue)
+                ? null
+                : _userService.GetUser(int.Parse(storedValue));
+        }
+        catch
+        {
+            // Ignore JS interop failures during prerender/static setup.
         }
 
         return CurrentUser;
@@ -55,7 +86,10 @@ public class SessionService
         if (currentUser?.IsAuditUser == true)
             return true;
 
-        return !thread.IsPrivate || currentUser != null && currentUser.JoinedThreadIds.Contains(thread.Id);
+        if (!thread.IsPrivate)
+            return true;
+
+        return currentUser != null && currentUser.JoinedThreadIds.Contains(thread.Id);
     }
 
     public bool CanAccessChat(DirectChat? chat, User? user = null)
@@ -73,6 +107,15 @@ public class SessionService
     public async Task LogoutAsync()
     {
         CurrentUser = null;
-        await _storage.DeleteAsync(SessionKey);
+
+        try
+        {
+            var key = await GetStorageKeyAsync();
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", key);
+        }
+        catch
+        {
+            // Ignore JS interop failures during prerender/static setup.
+        }
     }
 }

@@ -1,9 +1,54 @@
-@page "/profile/threads"
+@page "/profiles/{id:int}/threads"
 @layout MainLayout
+@using CampusChat.Services
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject UserService UserService
 
 <PageTitle>My Threads</PageTitle>
 
-<div class="container py-4">
-    <h1>My Threads</h1>
-    <CampusChatApp.Components.Threads.ThreadList />
-</div>
+@if (user is null)
+{
+    <div class="container py-4">
+        <div class="alert alert-danger">User not found.</div>
+    </div>
+}
+else
+{
+    <div class="container py-4">
+        <h1>@user.DisplayName's Threads</h1>
+        @if (user.JoinedThreadIds.Count == 0)
+        {
+            <div class="alert alert-info">This user has not joined any threads yet.</div>
+        }
+        else
+        {
+            <ul class="list-group">
+                @foreach (var threadId in user.JoinedThreadIds)
+                {
+                    var thread = ThreadService.GetThread(threadId);
+                    if (thread is not null)
+                    {
+                        <li class="list-group-item">
+                            <a href="/threads/@thread.Id">@thread.Name</a>
+                        </li>
+                    }
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private User? user;
+    [Inject]
+    public ThreadService ThreadService { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        user = UserService.GetUser(Id);
+    }
+}

@@ -1,5 +1,10 @@
 @page "/chats"
 @layout MainLayout
+@using CampusChat.Services
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject ChatService ChatService
 
 <PageTitle>Chats</PageTitle>
 
@@ -8,6 +13,58 @@
         <h1>Chats</h1>
         <a class="btn btn-primary" href="/chats/start">New chat</a>
     </div>
-    <ChatCard />
-    <ChatCard />
+
+    @if (currentUser is null)
+    {
+        <div class="alert alert-warning">Please sign in to view your chats.</div>
+    }
+    else
+    {
+        var chats = ChatService.GetAllChats()
+            .Where(c => c.User1Id == currentUser.Id || c.User2Id == currentUser.Id)
+            .OrderByDescending(c => c.Messages.LastOrDefault()?.SentAt ?? DateTime.MinValue)
+            .ToList();
+
+        if (chats.Count == 0)
+        {
+            <div class="alert alert-info">You have no direct chats yet.</div>
+        }
+        else
+        {
+            foreach (var chat in chats)
+            {
+                var otherUserId = chat.User1Id == currentUser.Id ? chat.User2Id : chat.User1Id;
+                var otherUser = UserService.GetUser(otherUserId);
+                var lastMessage = chat.Messages.LastOrDefault();
+
+                <a class="card mb-3 text-decoration-none text-body" href="/chats/@chat.Id">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>@(otherUser?.DisplayName ?? "Unknown")</strong>
+                                @if (lastMessage is not null)
+                                {
+                                    <div class="small text-muted">Last from: @lastMessage.SenderName</div>
+                                }
+                            </div>
+                            <small class="text-muted">@(lastMessage is null ? "new" : lastMessage.SentAt.ToShortTimeString())</small>
+                        </div>
+                        <p class="mb-0 text-muted">@(lastMessage?.Text ?? "No messages yet")</p>
+                    </div>
+                </a>
+            }
+        }
+    }
 </div>
+
+@code {
+    private User? currentUser;
+
+    [Inject]
+    public UserService UserService { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await SessionService.GetCurrentUserAsync();
+    }
+}

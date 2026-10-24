@@ -1,15 +1,82 @@
 @page "/threads/private"
 @layout MainLayout
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject ThreadService ThreadService
+@inject NavigationManager Navigation
 
 <PageTitle>Join Private Thread</PageTitle>
 
 <div class="container py-4">
     <h1>Join a private thread</h1>
-    <form class="card shadow-sm p-3">
-        <div class="mb-3">
-            <label class="form-label">Invite code</label>
-            <input class="form-control" placeholder="Enter join code" />
+
+    @if (currentUser is null)
+    {
+        <div class="alert alert-warning">Please sign in first.</div>
+    }
+    else if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert @(isSuccess ? "alert-success" : "alert-danger")">@message</div>
+    }
+
+    <EditForm Model="this" OnValidSubmit="JoinThread">
+        <div class="card shadow-sm p-3">
+            <div class="mb-3">
+                <label class="form-label">Thread ID</label>
+                <InputNumber class="form-control" @bind-Value="threadId" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Invite code</label>
+                <InputText class="form-control" @bind-Value="code" placeholder="Enter join code" />
+            </div>
+            <button type="submit" class="btn btn-primary">Join thread</button>
         </div>
-        <button type="submit" class="btn btn-primary">Join thread</button>
-    </form>
+    </EditForm>
 </div>
+
+@code {
+    private User? currentUser;
+    private int threadId;
+    private string code = string.Empty;
+    private string message = string.Empty;
+    private bool isSuccess;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await SessionService.GetCurrentUserAsync();
+    }
+
+    private async Task JoinThread()
+    {
+        if (currentUser is null)
+        {
+            message = "Please sign in first.";
+            isSuccess = false;
+            return;
+        }
+
+        var thread = ThreadService.GetThread(threadId);
+        if (thread is null)
+        {
+            message = "Thread not found.";
+            isSuccess = false;
+            return;
+        }
+
+        if (!ThreadService.CanAccessThread(thread, currentUser, code))
+        {
+            message = "Incorrect code. This private thread requires a valid access code.";
+            isSuccess = false;
+            return;
+        }
+
+        if (!currentUser.JoinedThreadIds.Contains(threadId))
+            currentUser.JoinedThreadIds.Add(threadId);
+
+        message = $"You joined '{thread.Name}'.";
+        isSuccess = true;
+        await Task.Delay(300);
+        Navigation.NavigateTo($"/threads/{threadId}");
+    }
+}

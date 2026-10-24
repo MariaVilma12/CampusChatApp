@@ -1,33 +1,109 @@
+@page "/"
 @page "/home"
 @layout MainLayout
+@using CampusChatApp.Data
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject NavigationManager Navigation
 
-<h3>Welcome to Campus Chat.</h3>
+@if (isChecking)
+{
+    <div class="container py-4">
+        <div class="alert alert-info">Checking your session...</div>
+    </div>
+}
+else if (currentUser is null)
+{
+    <div class="container py-4">
+        <div class="alert alert-warning">Please sign in to view your campus home.</div>
+    </div>
+}
+else
+{
+    <div class="container py-4">
+        <h3>Welcome, @currentUser.DisplayName.</h3>
 
+        <div class="row g-4 mt-3">
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h5">Your joined threads</h2>
 
-<Header />
-
-<div class="container-fluid">
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <PostEditor />
-            <PostCard />
-            <PostCard />
-            <EmptyPostMessage />
-        </div>
-        <div class="col-lg-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h2 class="h5">Popular threads</h2>
-                    <CampusChatApp.Components.Threads.ThreadList />
+                        @if (currentUser.JoinedThreadIds.Count == 0)
+                        {
+                            <div class="alert alert-info">You have not joined any thread yet.</div>
+                        }
+                        else
+                        {
+                            foreach (var threadId in currentUser.JoinedThreadIds)
+                            {
+                                var thread = SeedData.Threads.FirstOrDefault(t => t.Id == threadId);
+                                if (thread is not null)
+                                {
+                                    var unread = currentUser.UnreadThreadCounts.TryGetValue(thread.Id, out var value) ? value : 0;
+                                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                        <a href="/threads/@thread.Id" class="text-decoration-none">@thread.Name</a>
+                                        @if (unread > 0)
+                                        {
+                                            <span class="badge bg-warning text-dark">@unread</span>
+                                        }
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
                 </div>
             </div>
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h2 class="h5">Direct chats</h2>
-                    <ChatCard />
-                    <ChatCard />
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h5">Popular threads</h2>
+                        @foreach (var thread in SeedData.Threads.Take(5))
+                        {
+                            <div class="mb-2">
+                                <a href="/threads/@thread.Id" class="text-decoration-none">@thread.Name</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h5">Direct chats</h2>
+                        @foreach (var chat in SeedData.Chats.Where(c => c.User1Id == currentUser.Id || c.User2Id == currentUser.Id).Take(4))
+                        {
+                            var otherUserId = chat.User1Id == currentUser.Id ? chat.User2Id : chat.User1Id;
+                            var otherUser = SeedData.Users.FirstOrDefault(u => u.Id == otherUserId);
+                            <div class="mb-2">
+                                <a href="/chats/@chat.Id" class="text-decoration-none">@(otherUser?.DisplayName ?? "Unknown")</a>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+}
+
+@code {
+    private CampusChatApp.Models.User? currentUser;
+    private bool isChecking = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        currentUser = await SessionService.GetCurrentUserAsync();
+        isChecking = false;
+
+        if (currentUser is null)
+        {
+            Navigation.NavigateTo("/signin");
+        }
+        else
+        {
+            StateHasChanged();
+        }
+    }
+}

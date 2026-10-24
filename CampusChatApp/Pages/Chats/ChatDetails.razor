@@ -1,9 +1,14 @@
 @page "/chats/{id:int}"
 @layout MainLayout
+@using CampusChat.Services
+@using CampusChatApp.Components.Chat
 @using CampusChatApp.Models
 @using CampusChatApp.Services
+@using System.Threading
+@implements IDisposable
 @inject SessionService SessionService
 @inject ChatService ChatService
+@inject UserService UserService
 
 <PageTitle>Chat Details</PageTitle>
 
@@ -27,8 +32,11 @@ else if (!SessionService.CanAccessChat(chat, currentUser))
 }
 else
 {
+    var otherUserId = chat.User1Id == currentUser.Id ? chat.User2Id : chat.User1Id;
+    var otherUser = UserService.GetUser(otherUserId);
+
     <div class="container py-4">
-        <h1>Private chat</h1>
+        <h1>Chat with @((otherUser?.DisplayName ?? "Unknown"))</h1>
         <div class="card shadow-sm p-3 mb-3">
             @if (!chat.Messages.Any())
             {
@@ -38,11 +46,11 @@ else
             {
                 foreach (var message in chat.Messages)
                 {
-                    <ChatMessage />
+                    <ChatMessage Message="message" />
                 }
             }
         </div>
-        <ChatInput />
+        <ChatInput ChatId="Id" />
     </div>
 }
 
@@ -52,10 +60,36 @@ else
 
     private User? currentUser;
     private DirectChat? chat;
+    private CancellationTokenSource? _refreshToken;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         currentUser = await SessionService.GetCurrentUserAsync();
         chat = ChatService.GetChat(Id);
+
+        _refreshToken?.Cancel();
+        _refreshToken = new CancellationTokenSource();
+        _ = RefreshLoopAsync(_refreshToken.Token);
+    }
+
+    private async Task RefreshLoopAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(2000, cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            if (chat is not null)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _refreshToken?.Cancel();
+        _refreshToken?.Dispose();
     }
 }

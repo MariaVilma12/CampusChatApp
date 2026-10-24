@@ -1,6 +1,54 @@
 @namespace CampusChatApp.Components.Chat
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@using ChatMessageModel = CampusChatApp.Models.ChatMessage
+@inject ChatService ChatService
+@inject SessionService SessionService
+@inject NavigationManager Navigation
 
 <div class="input-group mt-3">
-    <input type="text" class="form-control" placeholder="Type a message..." />
-    <button class="btn btn-primary" type="button">Send</button>
+    <input type="text" class="form-control" @bind="messageText" placeholder="Type a message..." />
+    <button class="btn btn-primary" type="button" @onclick="SendMessage">Send</button>
 </div>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger mt-2">@errorMessage</div>
+}
+
+@code {
+    [Parameter]
+    public int ChatId { get; set; }
+
+    private string messageText = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(messageText))
+        {
+            errorMessage = "Message cannot be empty.";
+            return;
+        }
+
+        var currentUser = await SessionService.GetCurrentUserAsync();
+        if (currentUser is null)
+        {
+            errorMessage = "Please sign in to send a message.";
+            return;
+        }
+
+        ChatService.AddMessage(ChatId, new ChatMessageModel
+        {
+            Id = DateTime.UtcNow.Millisecond,
+            SenderId = currentUser.Id,
+            SenderName = currentUser.DisplayName,
+            Text = messageText.Trim(),
+            SentAt = DateTime.Now
+        });
+
+        messageText = string.Empty;
+        errorMessage = string.Empty;
+        Navigation.NavigateTo($"/chats/{ChatId}", forceLoad: true);
+    }
+}

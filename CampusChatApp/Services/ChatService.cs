@@ -28,4 +28,12 @@ public class ChatService
         if (chat is null) return;
         chat.Messages.Add(message);
     }
+
+    public IReadOnlyList<DirectChat> GetChatsForUser(User user)
+    {
+        return SeedData.Chats
+            .Where(c => c.User1Id == user.Id || c.User2Id == user.Id)
+            .OrderByDescending(c => c.Messages.LastOrDefault()?.SentAt ?? DateTime.MinValue)
+            .ToList();
+    }
 }

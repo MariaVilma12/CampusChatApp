@@ -1,19 +1,92 @@
 @page "/threads/create"
 @layout MainLayout
+@using CampusChatApp.Data
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject NavigationManager Navigation
 
 <PageTitle>Create Thread</PageTitle>
 
 <div class="container py-4">
     <h1>Create a thread</h1>
-    <form class="card shadow-sm p-3">
-        <div class="mb-3">
-            <label class="form-label">Thread title</label>
-            <input class="form-control" placeholder="Name your thread" />
+
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <div class="alert @(isSuccess ? "alert-success" : "alert-danger")">@message</div>
+    }
+
+    <EditForm Model="this" OnValidSubmit="CreateNewThread">
+        <div class="card shadow-sm p-3">
+            <div class="mb-3">
+                <label class="form-label">Thread title</label>
+                <InputText class="form-control" @bind-Value="threadName" placeholder="Name your thread" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Access</label>
+                <InputSelect class="form-select" @bind-Value="selectedAccessType">
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                </InputSelect>
+            </div>
+            @if (selectedAccessType == "private")
+            {
+                <div class="mb-3">
+                    <label class="form-label">Invite code</label>
+                    <InputText class="form-control" @bind-Value="accessCode" placeholder="Enter code for private thread" />
+                </div>
+            }
+            <button type="submit" class="btn btn-primary">Create</button>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea class="form-control" rows="4" placeholder="Describe the discussion topic"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Create</button>
-    </form>
+    </EditForm>
 </div>
+
+@code {
+    private string threadName = string.Empty;
+    private string accessCode = string.Empty;
+    private string selectedAccessType = "public";
+    private string message = string.Empty;
+    private bool isSuccess;
+
+    private async Task CreateNewThread()
+    {
+        var user = await SessionService.GetCurrentUserAsync();
+        if (user is null)
+        {
+            message = "Please sign in before creating a thread.";
+            isSuccess = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(threadName))
+        {
+            message = "Thread name cannot be empty.";
+            isSuccess = false;
+            return;
+        }
+
+        var newThread = new CampusChatApp.Models.Thread
+        {
+            Id = SeedData.Threads.Count == 0 ? 1 : SeedData.Threads.Max(t => t.Id) + 1,
+            Name = threadName.Trim(),
+            IsPrivate = selectedAccessType == "private",
+            AccessCode = selectedAccessType == "private" ? accessCode.Trim() : null,
+            Posts = new List<Post>()
+        };
+
+        if (newThread.IsPrivate && string.IsNullOrWhiteSpace(newThread.AccessCode))
+        {
+            message = "Private threads require an access code.";
+            isSuccess = false;
+            return;
+        }
+
+        SeedData.Threads.Add(newThread);
+        user.JoinedThreadIds.Add(newThread.Id);
+        message = $"Thread '{newThread.Name}' created successfully.";
+        isSuccess = true;
+
+        await Task.Delay(200);
+        Navigation.NavigateTo($"/threads/{newThread.Id}");
+    }
+}

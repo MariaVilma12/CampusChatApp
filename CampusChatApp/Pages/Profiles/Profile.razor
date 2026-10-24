@@ -1,13 +1,51 @@
 @page "/profile"
+@page "/profiles/{id:int}"
 @layout MainLayout
+@using CampusChat.Services
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject UserService UserService
+@inject SessionService SessionService
 
-<div class="container py-4">
-    <h1>Profile</h1>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <p><strong>Name:</strong> Campus Student</p>
-            <p><strong>Major:</strong> Computer Science</p>
-            <p><strong>Bio:</strong> Active member of the campus community.</p>
+<PageTitle>Profile</PageTitle>
+
+@if (user is null)
+{
+    <div class="container py-4">
+        <div class="alert alert-danger">User not found.</div>
+    </div>
+}
+else
+{
+    <div class="container py-4">
+        <h1>@user.DisplayName</h1>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p><strong>About:</strong> @user.About</p>
+                <p><strong>Year:</strong> @user.StudyYear</p>
+                <p><strong>Avatar:</strong> @user.AvatarColor</p>
+                <p><strong>Joined threads:</strong> @string.Join(", ", user.JoinedThreadIds)</p>
+            </div>
         </div>
     </div>
-</div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private User? user;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var currentUser = await SessionService.GetCurrentUserAsync();
+
+        if (Id > 0)
+        {
+            user = UserService.GetUser(Id);
+            return;
+        }
+
+        user = currentUser ?? UserService.GetUser(1);
+    }
+}

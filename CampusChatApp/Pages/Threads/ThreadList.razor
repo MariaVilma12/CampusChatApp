@@ -1,5 +1,10 @@
 @page "/threads"
 @layout MainLayout
+@using CampusChatApp.Data
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject ThreadService ThreadService
 
 <PageTitle>Threads</PageTitle>
 
@@ -8,6 +13,69 @@
         <h1>Threads</h1>
         <a class="btn btn-primary" href="/threads/create">New thread</a>
     </div>
-    <ThreadSearch />
-    <CampusChatApp.Components.Threads.ThreadList />
+
+    <div class="input-group mb-3">
+        <input class="form-control" @bind="searchText" placeholder="Search threads..." />
+    </div>
+
+    @if (currentUser is null)
+    {
+        <div class="alert alert-warning">Please sign in to view threads.</div>
+    }
+    else
+    {
+        var filteredThreads = ThreadService.SearchThreads(searchText)
+            .Where(t => !t.IsPrivate || SessionService.CanAccessThread(t, currentUser))
+            .ToList();
+
+        if (!filteredThreads.Any())
+        {
+            <div class="alert alert-info">No threads match your search.</div>
+        }
+        else
+        {
+            foreach (var thread in filteredThreads)
+            {
+                var unreadCount = currentUser.UnreadThreadCounts.TryGetValue(thread.Id, out var count) ? count : 0;
+                var latestPost = thread.Posts.OrderByDescending(p => p.CreatedAt).FirstOrDefault();
+                var latestAuthor = latestPost is not null ? (SeedData.Users.FirstOrDefault(u => u.Id == latestPost.AuthorId)?.DisplayName ?? latestPost.AuthorName) : "No posts yet";
+
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body d-flex justify-content-between align-items-start">
+                        <div>
+                            <h3 class="h5 mb-1">
+                                <a href="/threads/@thread.Id" class="text-decoration-none">@thread.Name</a>
+                            </h3>
+                            <p class="text-muted mb-0">@(thread.IsPrivate ? "Private thread" : "Public thread")</p>
+                            @if (latestPost is not null)
+                            {
+                                <small class="text-muted">Latest by @latestAuthor · @latestPost.CreatedAt.ToLocalTime().ToString("g")</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">No posts yet</small>
+                            }
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary me-2">@thread.Posts.Count</span>
+                            @if (unreadCount > 0)
+                            {
+                                <span class="badge bg-warning text-dark">@unreadCount unread</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
 </div>
+
+@code {
+    private User? currentUser;
+    private string searchText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await SessionService.GetCurrentUserAsync();
+    }
+}
