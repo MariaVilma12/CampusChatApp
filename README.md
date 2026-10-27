@@ -6,7 +6,9 @@ CampusChatApp is a Blazor Web App developed as part of **Arbeidskrav 2**. The ap
 
 The application is built using **ASP.NET Core Blazor Interactive Server** and currently stores all data in memory using seed data. No database is required.
 
+
 ---
+
 
 ## Features
 
