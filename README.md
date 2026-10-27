@@ -1,8 +1,8 @@
-# Campus Chat
+# CampusChatApp
 
 ## Project Overview
 
-Campus Chat is a Blazor Web App developed as part of **Arbeidskrav 2**. The application provides a simple campus discussion platform where users can sign in, participate in discussion threads, reply to posts, communicate through direct messages, and manage their profiles.
+CampusChatApp is a Blazor Web App developed as part of **Arbeidskrav 2**. The application provides a simple campus discussion platform where users can sign in, participate in discussion threads, reply to posts, communicate through direct messages, and manage their profiles.
 
 The application is built using **ASP.NET Core Blazor Interactive Server** and currently stores all data in memory using seed data. No database is required.
 
