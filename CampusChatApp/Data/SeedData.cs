@@ -12,7 +12,7 @@ public static class SeedData
             Id = 1,
             DisplayName = "John",
             About = "Second year backend student.",
-            AvatarColor = "Blue",
+            CourseStudying = "Computer Science",
             StudyYear = 2,
             IsAuditUser = false,
             JoinedThreadIds = new List<int> { 1, 2 }
@@ -23,7 +23,7 @@ public static class SeedData
             Id = 2,
             DisplayName = "Emma",
             About = "Loves programming and databases.",
-            AvatarColor = "Green",
+            CourseStudying = "Software Engineering",
             StudyYear = 2,
             IsAuditUser = false,
             JoinedThreadIds = new List<int> { 1, 2, 4 }
@@ -34,7 +34,7 @@ public static class SeedData
             Id = 3,
             DisplayName = "Alex",
             About = "Enjoys web development.",
-            AvatarColor = "Red",
+            CourseStudying = "Web Development",
             StudyYear = 1,
             IsAuditUser = false,
             JoinedThreadIds = new List<int> { 1 }
@@ -45,7 +45,7 @@ public static class SeedData
             Id = 4,
             DisplayName = "Teacher",
             About = "Lecturer",
-            AvatarColor = "Purple",
+            CourseStudying = "Education",
             StudyYear = 0,
             IsAuditUser = false,
             JoinedThreadIds = new List<int> { 4 }
@@ -56,7 +56,7 @@ public static class SeedData
             Id = 5,
             DisplayName = "Auditor",
             About = "College Auditor",
-            AvatarColor = "Black",
+            CourseStudying = "Audit and Compliance",
             StudyYear = 0,
             IsAuditUser = true,
             JoinedThreadIds = new List<int> { 1, 2, 3, 4 }

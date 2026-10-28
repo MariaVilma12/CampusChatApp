@@ -8,8 +8,7 @@ public class User
 
     public string About { get; set; } = string.Empty;
 
-    // Example: Blue, Green, Red
-    public string AvatarColor { get; set; } = "Blue";
+    public string CourseStudying { get; set; } = string.Empty;
 
     public int StudyYear { get; set; }
 
