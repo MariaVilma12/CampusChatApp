@@ -1,0 +1,68 @@
+@page "/profile/create"
+@layout MainLayout
+@using CampusChat.Services
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject UserService UserService
+@inject SessionService SessionService
+@inject NavigationManager Navigation
+
+<PageTitle>Create Profile</PageTitle>
+
+<div class="container py-4">
+    <h1>Create Profile</h1>
+
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="alert @(isError ? "alert-danger" : "alert-success")">@statusMessage</div>
+    }
+
+    <EditForm Model="this" OnValidSubmit="CreateUserProfile">
+        <div class="card shadow-sm p-3">
+            <div class="mb-3">
+                <label class="form-label">Display Name</label>
+                <InputText class="form-control" @bind-Value="displayName" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Biography</label>
+                <InputTextArea class="form-control" @bind-Value="about" rows="4" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Course studying</label>
+                <InputText class="form-control" @bind-Value="courseStudying" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Study Year</label>
+                <InputNumber class="form-control" @bind-Value="studyYear" />
+            </div>
+            <button type="submit" class="btn btn-primary">Create profile</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private string displayName = string.Empty;
+    private string about = string.Empty;
+    private string courseStudying = string.Empty;
+    private int studyYear = 1;
+    private string statusMessage = string.Empty;
+    private bool isError;
+
+    private async Task CreateUserProfile()
+    {
+        try
+        {
+            var user = UserService.CreateProfile(displayName, about, courseStudying, studyYear);
+            await SessionService.SetCurrentUserAsync(user);
+            statusMessage = "Profile created successfully.";
+            isError = false;
+            await Task.Delay(200);
+            Navigation.NavigateTo("/profile");
+        }
+        catch (Exception ex)
+        {
+            statusMessage = ex.Message;
+            isError = true;
+        }
+    }
+}

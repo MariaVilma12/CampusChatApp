@@ -6,6 +6,7 @@
 @using CampusChatApp.Services
 @inject UserService UserService
 @inject SessionService SessionService
+@inject NavigationManager Navigation
 
 <PageTitle>Profile</PageTitle>
 
@@ -18,7 +19,14 @@
 else
 {
     <div class="container py-4">
-        <h1>@user.DisplayName</h1>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1>@user.DisplayName</h1>
+            @if (isOwnProfile)
+            {
+                <button class="btn btn-primary" @onclick="NavigateToEditProfile">Edit profile</button>
+            }
+        </div>
+
         <div class="card shadow-sm">
             <div class="card-body">
                 <p><strong>About:</strong> @user.About</p>
@@ -35,6 +43,7 @@ else
     public int Id { get; set; }
 
     private User? user;
+    private bool isOwnProfile;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -43,9 +52,16 @@ else
         if (Id > 0)
         {
             user = UserService.GetUser(Id);
+            isOwnProfile = currentUser is not null && user is not null && currentUser.Id == user.Id;
             return;
         }
 
         user = currentUser ?? UserService.GetUser(1);
+        isOwnProfile = currentUser is not null && user is not null;
+    }
+
+    private void NavigateToEditProfile()
+    {
+        Navigation.NavigateTo("/profile/edit");
     }
 }

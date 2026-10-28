@@ -1,19 +1,97 @@
 @page "/profile/edit"
 @layout MainLayout
+@using CampusChat.Services
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject UserService UserService
+@inject NavigationManager Navigation
 
 <PageTitle>Edit Profile</PageTitle>
 
-<div class="container py-4">
-    <h1>Edit Profile</h1>
-    <form class="card shadow-sm p-3">
-        <div class="mb-3">
-            <label class="form-label">Display Name</label>
-            <input class="form-control" value="Campus Student" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Biography</label>
-            <textarea class="form-control" rows="4">Active member of the campus community.</textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Save changes</button>
-    </form>
-</div>
+@if (currentUser is null)
+{
+    <div class="container py-4">
+        <div class="alert alert-warning">Please sign in to edit your profile.</div>
+    </div>
+}
+else
+{
+    <div class="container py-4">
+        <h1>Edit Profile</h1>
+
+        @if (!string.IsNullOrWhiteSpace(statusMessage))
+        {
+            <div class="alert @(isError ? "alert-danger" : "alert-success")">@statusMessage</div>
+        }
+
+        <EditForm Model="this" OnValidSubmit="SaveProfile">
+            <div class="card shadow-sm p-3">
+                <div class="mb-3">
+                    <label class="form-label">Display Name</label>
+                    <InputText class="form-control" @bind-Value="displayName" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Biography</label>
+                    <InputTextArea class="form-control" @bind-Value="about" rows="4" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Course studying</label>
+                    <InputText class="form-control" @bind-Value="courseStudying" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Study Year</label>
+                    <InputNumber class="form-control" @bind-Value="studyYear" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+    private User? currentUser;
+    private string displayName = string.Empty;
+    private string about = string.Empty;
+    private string courseStudying = string.Empty;
+    private int studyYear;
+    private string statusMessage = string.Empty;
+    private bool isError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await SessionService.GetCurrentUserAsync();
+        if (currentUser is null)
+            return;
+
+        displayName = currentUser.DisplayName;
+        about = currentUser.About;
+        courseStudying = currentUser.CourseStudying;
+        studyYear = currentUser.StudyYear;
+    }
+
+    private async Task SaveProfile()
+    {
+        if (currentUser is null)
+        {
+            statusMessage = "Please sign in to edit your profile.";
+            isError = true;
+            return;
+        }
+
+        try
+        {
+            UserService.UpdateProfile(currentUser, displayName, about, courseStudying, studyYear);
+            await SessionService.SetCurrentUserAsync(currentUser);
+            statusMessage = "Profile updated successfully.";
+            isError = false;
+            await Task.Delay(200);
+            Navigation.NavigateTo("/profile");
+        }
+        catch (Exception ex)
+        {
+            statusMessage = ex.Message;
+            isError = true;
+        }
+    }
+}
