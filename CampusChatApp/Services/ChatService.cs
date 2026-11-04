@@ -5,33 +5,33 @@ namespace CampusChatApp.Services;
 
 public class ChatService
 {
-    public IReadOnlyList<DirectChat> GetAllChats()
+    public static IReadOnlyList<DirectChat> GetAllChats()
     {
-        return SeedData.Chats;
+        return AppStore.Chats;
     }
 
-    public DirectChat? GetChat(int id)
+    public static DirectChat? GetChat(int id)
     {
-        return SeedData.Chats.FirstOrDefault(c => c.Id == id);
+        return AppStore.Chats.FirstOrDefault(c => c.Id == id);
     }
 
-    public DirectChat AddChat(DirectChat chat)
+    public static DirectChat AddChat(DirectChat chat)
     {
-        chat.Id = SeedData.Chats.Count == 0 ? 1 : SeedData.Chats.Max(c => c.Id) + 1;
-        SeedData.Chats.Add(chat);
+        chat.Id = AppStore.Chats.Count == 0 ? 1 : AppStore.Chats.Max(c => c.Id) + 1;
+        AppStore.Chats.Add(chat);
         return chat;
     }
 
-    public void AddMessage(int chatId, ChatMessage message)
+    public static void AddMessage(int chatId, ChatMessage message)
     {
-        var chat = SeedData.Chats.FirstOrDefault(c => c.Id == chatId);
+        var chat = AppStore.Chats.FirstOrDefault(c => c.Id == chatId);
         if (chat is null) return;
         chat.Messages.Add(message);
     }
 
-    public IReadOnlyList<DirectChat> GetChatsForUser(User user)
+    public static IReadOnlyList<DirectChat> GetChatsForUser(User user)
     {
-        return SeedData.Chats
+        return AppStore.Chats
             .Where(c => c.User1Id == user.Id || c.User2Id == user.Id)
             .OrderByDescending(c => c.Messages.LastOrDefault()?.SentAt ?? DateTime.MinValue)
             .ToList();

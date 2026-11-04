@@ -25,7 +25,7 @@ This structure keeps the project organized and makes each part responsible for a
 
 - **Models** store the application's data.
 - **Services** contain the application logic.
-- **Data** provides in-memory seed data.
+- **Data** provides the in-memory application store.
 - **Components and Pages** display the user interface.
 - **Helpers** can contain utility methods if needed later.
 
@@ -35,7 +35,7 @@ Keeping these responsibilities separate makes the application easier to maintain
 
 # Data Storage
 
-The assignment does not require a database. Therefore, the application stores all data in memory using a `SeedData` class.
+The assignment does not require a database. Therefore, the application stores all data in memory using an `AppStore` class.
 
 This approach has several advantages:
 
@@ -50,7 +50,7 @@ The disadvantage is that all data is lost when the application stops. This is ac
 
 # Service Layer
 
-Instead of accessing the seed data directly from the pages, the application uses service classes.
+Instead of accessing the in-memory store directly from the pages, the application uses service classes.
 
 The project includes:
 

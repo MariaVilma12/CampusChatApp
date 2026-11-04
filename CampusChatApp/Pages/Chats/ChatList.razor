@@ -1,6 +1,5 @@
 @page "/chats"
 @layout MainLayout
-@using CampusChat.Services
 @using CampusChatApp.Models
 @using CampusChatApp.Services
 @inject SessionService SessionService
@@ -14,14 +13,14 @@
         <a class="btn btn-primary" href="/chats/start">New chat</a>
     </div>
 
-    @if (currentUser is null)
+    @if (_currentUser is null)
     {
         <div class="alert alert-warning">Please sign in to view your chats.</div>
     }
     else
     {
         var chats = ChatService.GetAllChats()
-            .Where(c => c.User1Id == currentUser.Id || c.User2Id == currentUser.Id)
+            .Where(c => c.User1Id == _currentUser.Id || c.User2Id == _currentUser.Id)
             .OrderByDescending(c => c.Messages.LastOrDefault()?.SentAt ?? DateTime.MinValue)
             .ToList();
 
@@ -33,7 +32,7 @@
         {
             foreach (var chat in chats)
             {
-                var otherUserId = chat.User1Id == currentUser.Id ? chat.User2Id : chat.User1Id;
+                var otherUserId = chat.User1Id == _currentUser.Id ? chat.User2Id : chat.User1Id;
                 var otherUser = UserService.GetUser(otherUserId);
                 var lastMessage = chat.Messages.LastOrDefault();
 
@@ -58,13 +57,13 @@
 </div>
 
 @code {
-    private User? currentUser;
+    private User? _currentUser;
 
     [Inject]
     public UserService UserService { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        currentUser = await SessionService.GetCurrentUserAsync();
+        _currentUser = await SessionService.GetCurrentUserAsync();
     }
 }

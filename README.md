@@ -4,7 +4,7 @@
 
 CampusChatApp is a Blazor Web App developed as part of **Arbeidskrav 2**. The application provides a simple campus discussion platform where users can sign in, participate in discussion threads, reply to posts, communicate through direct messages, and manage their profiles.
 
-The application is built using **ASP.NET Core Blazor Interactive Server** and currently stores all data in memory using seed data. No database is required.
+The application is built using **ASP.NET Core Blazor Interactive Server** and stores all data in memory in a lightweight application store. No database is required.
 
 
 ---
@@ -30,7 +30,7 @@ To run this project, you need:
 - JetBrains Rider or Visual Studio
 - A modern web browser (Microsoft Edge or Google Chrome)
 
-No database installation is required because the application uses in-memory seed data.
+No database installation is required because the application uses an in-memory application store.
 
 ---
 
@@ -57,7 +57,7 @@ Implemented features include:
 
 - Project structure
 - Domain models
-- Seed data
+- In-memory application data
 - Application services
 - Dependency Injection
 

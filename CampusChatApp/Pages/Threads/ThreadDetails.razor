@@ -1,36 +1,37 @@
 @page "/threads/{id:int}"
 @layout MainLayout
-@using CampusChat.Services
 @using CampusChatApp.Data
+@using CampusChatApp.Helpers
 @using CampusChatApp.Models
 @using CampusChatApp.Services
 @implements IDisposable
 @inject SessionService SessionService
 @inject ThreadService ThreadService
+@inject CampusChatStateService CampusChatStateService
 @inject NavigationManager NavigationManager
 @using System.Threading
 
 <PageTitle>Thread Details</PageTitle>
 
-@if (currentUser is null)
+@if (_currentUser is null)
 {
     <div class="container py-4">
         <div class="alert alert-warning">Please sign in to view this thread.</div>
     </div>
 }
-else if (thread is null)
+else if (_thread is null)
 {
     <div class="container py-4">
         <div class="alert alert-danger">Thread not found.</div>
     </div>
 }
-else if (!SessionService.CanAccessThread(thread, currentUser))
+else if (!SessionService.CanAccessThread(_thread, _currentUser))
 {
     <div class="container py-4">
         <div class="alert alert-warning">This private thread requires a valid access code.</div>
         <div class="card shadow-sm p-3">
             <label class="form-label">Access code</label>
-            <input type="text" class="form-control" @bind="enteredCode" />
+            <input type="text" class="form-control" @bind="_enteredCode" />
             <button class="btn btn-primary mt-3" @onclick="TryJoinThread">Join thread</button>
         </div>
     </div>
@@ -38,22 +39,23 @@ else if (!SessionService.CanAccessThread(thread, currentUser))
 else
 {
     <div class="container py-4">
-        <h1>@thread.Name</h1>
+        <h1>@_thread.Name</h1>
         <div class="card shadow-sm mb-4">
             <div class="card-body">
-                <p class="mb-0">@(thread.IsPrivate ? "Private thread" : "Public thread")</p>
+                <p class="mb-0">@(_thread.IsPrivate ? "Private thread" : "Public thread")</p>
             </div>
         </div>
 
-        @if (!thread.Posts.Any())
+        @if (!_thread.Posts.Any())
         {
             <div class="alert alert-info">This thread has no posts yet. Start the conversation.</div>
         }
         else
         {
-            foreach (var post in thread.Posts)
+            foreach (var post in _thread.Posts)
             {
-                var author = SeedData.Users.FirstOrDefault(u => u.Id == post.AuthorId);
+                var author = AppStore.Users.FirstOrDefault(u => u.Id == post.AuthorId);
+                var canDeletePost = _currentUser is not null && (post.AuthorId == _currentUser.Id || _currentUser.IsAuditUser);
                 <div class="card mb-3 shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -61,8 +63,30 @@ else
                                 <strong>@(author?.DisplayName ?? post.AuthorName)</strong>
                                 <div class="small text-muted">@post.CreatedAt.ToLocalTime().ToString("g")</div>
                             </div>
+                            @if (canDeletePost)
+                            {
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeletePost(post.Id)">Delete</button>
+                            }
                         </div>
-                        <p class="mb-0">@post.Text</p>
+                        <p class="mb-2">@post.Text</p>
+                        @if (post.Replies.Any())
+                        {
+                            foreach (var reply in post.Replies)
+                            {
+                                <div class="border-start border-2 ps-3 ms-3 my-2">
+                                    <small class="text-muted">Reply by @reply.AuthorName · @reply.CreatedAt.ToLocalTime().ToString("g")</small>
+                                    <p class="mb-0">@reply.Text</p>
+                                </div>
+                            }
+                        }
+                        <div class="mt-2">
+                            <textarea class="form-control form-control-sm mb-2"
+                                      rows="2"
+                                      value="@GetReplyText(post.Id)"
+                                      @oninput="e => SetReplyText(post.Id, e.Value?.ToString())"
+                                      placeholder="Write a reply..."></textarea>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => AddReply(post.Id)">Reply</button>
+                        </div>
                     </div>
                 </div>
             }
@@ -70,10 +94,10 @@ else
 
         <div class="card shadow-sm p-3 mt-4">
             <label class="form-label">Write a post</label>
-            <textarea class="form-control mb-2" @bind="newPostText" rows="3"></textarea>
-            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            <textarea class="form-control mb-2" @bind="_newPostText" rows="3"></textarea>
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
             {
-                <div class="alert alert-danger">@errorMessage</div>
+                <div class="alert alert-danger">@_errorMessage</div>
             }
             <button class="btn btn-primary" @onclick="AddPost">Post</button>
         </div>
@@ -84,101 +108,159 @@ else
     [Parameter]
     public int Id { get; set; }
 
-    private User? currentUser;
-    private CampusChatApp.Models.Thread? thread;
-    private string newPostText = string.Empty;
-    private string errorMessage = string.Empty;
-    private string enteredCode = string.Empty;
-    private CancellationTokenSource? _refreshToken;
-
+    private User? _currentUser;
+    private CampusChatApp.Models.Thread? _thread;
+    private string _newPostText = string.Empty;
+    private string _errorMessage = string.Empty;
+    private string _enteredCode = string.Empty;
+    private Dictionary<int, string> _replyTextByPost = new();
     protected override async Task OnParametersSetAsync()
     {
-        currentUser = await SessionService.GetCurrentUserAsync();
-        thread = ThreadService.GetThread(Id);
+        CampusChatStateService.DataChanged -= HandleDataChanged;
 
-        if (currentUser is not null && thread is not null && currentUser.JoinedThreadIds.Contains(thread.Id))
-        {
-            currentUser.UnreadThreadCounts[thread.Id] = 0;
-        }
+        _currentUser = await SessionService.GetCurrentUserAsync();
+        _thread = ThreadService.GetThread(Id);
+        UpdateUnreadToZero();
 
-        _refreshToken?.Cancel();
-        _refreshToken = new CancellationTokenSource();
-        _ = RefreshLoopAsync(_refreshToken.Token);
+        CampusChatStateService.DataChanged += HandleDataChanged;
+        await InvokeAsync(StateHasChanged);
     }
 
-    private async Task RefreshLoopAsync(CancellationToken cancellationToken)
+    private async void HandleDataChanged()
     {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            await Task.Delay(2000, cancellationToken);
-            if (cancellationToken.IsCancellationRequested)
-                break;
-
-            if (thread is not null)
-            {
-                await InvokeAsync(StateHasChanged);
-            }
-        }
+        _thread = ThreadService.GetThread(Id);
+        UpdateUnreadToZero();
+        await InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
-        _refreshToken?.Cancel();
-        _refreshToken?.Dispose();
-        if (currentUser is not null && thread is not null && currentUser.JoinedThreadIds.Contains(thread.Id))
-        {
-            currentUser.UnreadThreadCounts[thread.Id] = 0;
-        }
+        CampusChatStateService.DataChanged -= HandleDataChanged;
+        UpdateUnreadToZero();
+    }
+
+    private string GetReplyText(int postId)
+    {
+        return _replyTextByPost.TryGetValue(postId, out var text) ? text : string.Empty;
+    }
+
+    private void SetReplyText(int postId, string? text)
+    {
+        _replyTextByPost[postId] = text ?? string.Empty;
     }
 
     private async Task TryJoinThread()
     {
-        if (currentUser is null || thread is null)
+        if (_currentUser is null || _thread is null)
             return;
 
-        if (ThreadService.TryJoinPrivateThread(thread.Id, enteredCode, currentUser))
+        if (ThreadService.TryJoinPrivateThread(_thread.Id, _enteredCode, _currentUser))
         {
-            NavigationManager.NavigateTo($"/threads/{thread.Id}", forceLoad: true);
+            NavigationManager.NavigateTo($"/threads/{_thread.Id}", forceLoad: true);
         }
         else
         {
-            errorMessage = "Incorrect code. This private thread requires a valid access code.";
+            _errorMessage = "Incorrect code. This private thread requires a valid access code.";
         }
+    }
+
+    private void UpdateUnreadToZero()
+    {
+        if (_currentUser is null || _thread is null)
+            return;
+
+        if (_currentUser.JoinedThreadIds.Contains(_thread.Id))
+            _currentUser.UnreadThreadCounts[_thread.Id] = 0;
     }
 
     private async Task AddPost()
     {
-        if (currentUser is null || thread is null)
+        if (_currentUser is null || _thread is null)
             return;
 
-        if (string.IsNullOrWhiteSpace(newPostText))
+        if (string.IsNullOrWhiteSpace(_newPostText))
         {
-            errorMessage = "Post cannot be empty.";
+            _errorMessage = "Post cannot be empty.";
+            return;
+        }
+
+        if (_newPostText.Trim().Length > Constants.MaxPostLength)
+        {
+            _errorMessage = $"Post must be {Constants.MaxPostLength} characters or fewer.";
             return;
         }
 
         var post = new Post
         {
-            Id = thread.Posts.Count == 0 ? 1 : thread.Posts.Max(p => p.Id) + 1,
-            AuthorId = currentUser.Id,
-            AuthorName = currentUser.DisplayName,
-            Text = newPostText.Trim(),
+            Id = _thread.Posts.Count == 0 ? 1 : _thread.Posts.Max(p => p.Id) + 1,
+            AuthorId = _currentUser.Id,
+            AuthorName = _currentUser.DisplayName,
+            Text = _newPostText.Trim(),
             CreatedAt = DateTime.Now,
             Replies = new List<Reply>()
         };
 
-        ThreadService.AddPost(thread.Id, post);
+        ThreadService.AddPost(_thread.Id, post);
 
-        foreach (var user in SeedData.Users.Where(u => u.JoinedThreadIds.Contains(thread.Id) && u.Id != currentUser.Id))
+        foreach (var user in AppStore.Users.Where(u => u.JoinedThreadIds.Contains(_thread.Id) && u.Id != _currentUser.Id))
         {
-            if (!user.UnreadThreadCounts.ContainsKey(thread.Id))
-                user.UnreadThreadCounts[thread.Id] = 0;
+            if (!user.UnreadThreadCounts.ContainsKey(_thread.Id))
+                user.UnreadThreadCounts[_thread.Id] = 0;
 
-            user.UnreadThreadCounts[thread.Id] += 1;
+            user.UnreadThreadCounts[_thread.Id] += 1;
         }
 
-        newPostText = string.Empty;
-        errorMessage = string.Empty;
-        StateHasChanged();
+        _newPostText = string.Empty;
+        _errorMessage = string.Empty;
+        CampusChatStateService.NotifyChanged();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AddReply(int postId)
+    {
+        if (_currentUser is null || _thread is null)
+            return;
+
+        if (!_replyTextByPost.TryGetValue(postId, out var text) || string.IsNullOrWhiteSpace(text))
+        {
+            _errorMessage = "Reply cannot be empty.";
+            return;
+        }
+
+        var cleanedText = text.Trim();
+        if (cleanedText.Length > Constants.MaxReplyLength)
+        {
+            _errorMessage = $"Reply must be {Constants.MaxReplyLength} characters or fewer.";
+            return;
+        }
+
+        var reply = new Reply
+        {
+            Id = _thread.Posts.SelectMany(p => p.Replies).DefaultIfEmpty().Max(r => r?.Id ?? 0) + 1,
+            PostId = postId,
+            AuthorId = _currentUser.Id,
+            AuthorName = _currentUser.DisplayName,
+            Text = cleanedText,
+            CreatedAt = DateTime.Now
+        };
+
+        ThreadService.AddReply(_thread.Id, postId, reply);
+        _replyTextByPost.Remove(postId);
+        _errorMessage = string.Empty;
+        CampusChatStateService.NotifyChanged();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void DeletePost(int postId)
+    {
+        if (_currentUser is null || _thread is null)
+            return;
+
+        if (ThreadService.DeletePost(_thread.Id, postId, _currentUser))
+        {
+            _errorMessage = string.Empty;
+            CampusChatStateService.NotifyChanged();
+            InvokeAsync(StateHasChanged);
+        }
     }
 }

@@ -1,77 +1,35 @@
 
-using CampusChat.Services;
 using CampusChatApp.Models;
-using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using ThreadModel = CampusChatApp.Models.Thread;
 
 namespace CampusChatApp.Services;
 
-public class SessionService
+public class SessionService(
+    ProtectedSessionStorage sessionStorage,
+    UserService userService)
 {
-    private const string BrowserStorageKeyPrefix = "campus-chat-current-user";
+    private const string CurrentUserKey = "campus-chat-current-user";
 
-    private readonly IJSRuntime _jsRuntime;
-    private readonly UserService _userService;
-
-    public User? CurrentUser { get; private set; }
-
-    public SessionService(
-        IJSRuntime jsRuntime,
-        UserService userService)
-    {
-        _jsRuntime = jsRuntime;
-        _userService = userService;
-    }
-
-    private async Task<string> GetStorageKeyAsync()
-    {
-        try
-        {
-            var windowId = await _jsRuntime.InvokeAsync<string?>("eval", "window.name || ''");
-            if (string.IsNullOrWhiteSpace(windowId))
-            {
-                windowId = Guid.NewGuid().ToString("N");
-                await _jsRuntime.InvokeVoidAsync("eval", $"window.name = '{windowId}';");
-            }
-
-            return $"{BrowserStorageKeyPrefix}-{windowId}";
-        }
-        catch
-        {
-            return BrowserStorageKeyPrefix;
-        }
-    }
+    private User? CurrentUser { get; set; }
 
     public async Task SetCurrentUserAsync(User user)
     {
         CurrentUser = user;
-
-        try
-        {
-            var key = await GetStorageKeyAsync();
-            await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", key, user.Id.ToString());
-        }
-        catch
-        {
-            // Ignore JS interop failures during prerender/static setup.
-        }
+        await sessionStorage.SetAsync(CurrentUserKey, user.Id);
     }
 
     public async Task<User?> GetCurrentUserAsync()
     {
-        try
+        var result = await sessionStorage.GetAsync<int>(CurrentUserKey);
+
+        if (!result.Success || result.Value == 0)
         {
-            var key = await GetStorageKeyAsync();
-            var storedValue = await _jsRuntime.InvokeAsync<string?>("sessionStorage.getItem", key);
-            CurrentUser = string.IsNullOrWhiteSpace(storedValue)
-                ? null
-                : _userService.GetUser(int.Parse(storedValue));
-        }
-        catch
-        {
-            // Ignore JS interop failures during prerender/static setup.
+            CurrentUser = null;
+            return null;
         }
 
+        CurrentUser = userService.GetUser(result.Value);
         return CurrentUser;
     }
 
@@ -107,15 +65,6 @@ public class SessionService
     public async Task LogoutAsync()
     {
         CurrentUser = null;
-
-        try
-        {
-            var key = await GetStorageKeyAsync();
-            await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", key);
-        }
-        catch
-        {
-            // Ignore JS interop failures during prerender/static setup.
-        }
+        await sessionStorage.DeleteAsync(CurrentUserKey);
     }
 }

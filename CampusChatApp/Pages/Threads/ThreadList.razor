@@ -5,49 +5,60 @@
 @using CampusChatApp.Services
 @inject SessionService SessionService
 @inject ThreadService ThreadService
+@inject NavigationManager Navigation
 
 <PageTitle>Threads</PageTitle>
 
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Threads</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-uppercase text-primary small fw-semibold mb-1">Community</p>
+            <h1 class="h3 mb-0">Threads</h1>
+        </div>
         <a class="btn btn-primary" href="/threads/create">New thread</a>
     </div>
 
-    <div class="input-group mb-3">
-        <input class="form-control" @bind="searchText" placeholder="Search threads..." />
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3">
+            <input class="form-control border-0 bg-light" @bind="_searchText" placeholder="Search threads..." />
+        </div>
     </div>
 
-    @if (currentUser is null)
+    @if (_currentUser is null)
     {
-        <div class="alert alert-warning">Please sign in to view threads.</div>
+        <div class="alert alert-warning rounded-3">Please sign in to view threads.</div>
     }
     else
     {
-        var filteredThreads = ThreadService.SearchThreads(searchText)
-            .Where(t => !t.IsPrivate || SessionService.CanAccessThread(t, currentUser))
+        var filteredThreads = ThreadService.SearchThreads(_searchText)
+            .OrderByDescending(t => t.LastUpdatedAt)
             .ToList();
 
         if (!filteredThreads.Any())
         {
-            <div class="alert alert-info">No threads match your search.</div>
+            <div class="alert alert-info rounded-3">No threads match your search.</div>
         }
         else
         {
             foreach (var thread in filteredThreads)
             {
-                var unreadCount = currentUser.UnreadThreadCounts.TryGetValue(thread.Id, out var count) ? count : 0;
+                var canViewThread = SessionService.CanAccessThread(thread, _currentUser);
+                var unreadCount = _currentUser.UnreadThreadCounts.TryGetValue(thread.Id, out var count) ? count : 0;
                 var latestPost = thread.Posts.OrderByDescending(p => p.CreatedAt).FirstOrDefault();
-                var latestAuthor = latestPost is not null ? (SeedData.Users.FirstOrDefault(u => u.Id == latestPost.AuthorId)?.DisplayName ?? latestPost.AuthorName) : "No posts yet";
+                var latestAuthor = latestPost is not null ? (AppStore.Users.FirstOrDefault(u => u.Id == latestPost.AuthorId)?.DisplayName ?? latestPost.AuthorName) : "No posts yet";
 
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-body d-flex justify-content-between align-items-start">
+                <div class="card border-0 shadow-sm rounded-4 mb-3">
+                    <div class="card-body d-flex justify-content-between align-items-start gap-3">
                         <div>
                             <h3 class="h5 mb-1">
-                                <a href="/threads/@thread.Id" class="text-decoration-none">@thread.Name</a>
+                                <a href="/threads/@thread.Id" class="text-decoration-none text-dark">@thread.Name</a>
                             </h3>
-                            <p class="text-muted mb-0">@(thread.IsPrivate ? "Private thread" : "Public thread")</p>
-                            @if (latestPost is not null)
+                            <p class="text-muted mb-2">@(thread.IsPrivate ? "Private thread" : "Public thread")</p>
+                            @if (thread.IsPrivate && !canViewThread)
+                            {
+                                <small class="text-muted">Locked. Requires access code to view posts.</small>
+                            }
+                            else if (latestPost is not null)
                             {
                                 <small class="text-muted">Latest by @latestAuthor · @latestPost.CreatedAt.ToLocalTime().ToString("g")</small>
                             }
@@ -60,7 +71,15 @@
                             <span class="badge bg-primary me-2">@thread.Posts.Count</span>
                             @if (unreadCount > 0)
                             {
-                                <span class="badge bg-warning text-dark">@unreadCount unread</span>
+                                <span class="badge bg-warning text-dark rounded-pill">@unreadCount unread</span>
+                            }
+                            @if (_currentUser.JoinedThreadIds.Contains(thread.Id))
+                            {
+                                <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="() => LeaveThread(thread.Id)">Leave</button>
+                            }
+                            else if (thread.IsPrivate)
+                            {
+                                <button class="btn btn-sm btn-primary mt-2" @onclick="() => JoinThread(thread.Id)">Join</button>
                             }
                         </div>
                     </div>
@@ -71,11 +90,43 @@
 </div>
 
 @code {
-    private User? currentUser;
-    private string searchText = string.Empty;
+    private User? _currentUser;
+    private string _searchText = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        currentUser = await SessionService.GetCurrentUserAsync();
+        _currentUser = await SessionService.GetCurrentUserAsync();
+    }
+
+    private async Task JoinThread(int threadId)
+    {
+        if (_currentUser is null)
+            return;
+
+        var thread = ThreadService.GetThread(threadId);
+        if (thread is null)
+            return;
+
+        if (!thread.IsPrivate)
+        {
+            if (!_currentUser.JoinedThreadIds.Contains(threadId))
+                _currentUser.JoinedThreadIds.Add(threadId);
+
+            await SessionService.SetCurrentUserAsync(_currentUser);
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        Navigation.NavigateTo($"/threads/{threadId}");
+    }
+
+    private async Task LeaveThread(int threadId)
+    {
+        if (_currentUser is null)
+            return;
+
+        ThreadService.LeaveThread(threadId, _currentUser);
+        await SessionService.SetCurrentUserAsync(_currentUser);
+        await InvokeAsync(StateHasChanged);
     }
 }

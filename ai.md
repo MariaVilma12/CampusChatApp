@@ -19,7 +19,7 @@ Examples of how they were used include:
 
 - Explaining the assignment requirements.
 - Generating example C# model classes.
-- Creating sample seed data and service classes.
+- Creating example in-memory app data and service classes.
 - Explaining Blazor concepts such as Dependency Injection and Protected Session Storage.
 - Suggesting project structure and folder organization.
 - Assisting with writing project documentation such as the README, design document, and this AI report.

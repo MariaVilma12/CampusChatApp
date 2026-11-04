@@ -10,7 +10,7 @@ public class Post
 
     public string AuthorName { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Replies to this post
     public List<Reply> Replies { get; set; } = new();

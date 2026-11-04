@@ -6,6 +6,8 @@ public class Thread
 
     public string Name { get; set; } = string.Empty;
 
+    public DateTime LastUpdatedAt { get; set; } = DateTime.UtcNow;
+
     // True if the thread is private
     public bool IsPrivate { get; set; }
 

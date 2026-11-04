@@ -12,6 +12,8 @@ public class User
 
     public int StudyYear { get; set; }
 
+    public string AvatarColor { get; set; } = "#4f46e5";
+
     // True only for the Auditor account
     public bool IsAuditUser { get; set; }
 

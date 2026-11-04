@@ -2,18 +2,17 @@
 @page "/home"
 @layout MainLayout
 @using CampusChatApp.Data
-@using CampusChatApp.Models
 @using CampusChatApp.Services
 @inject SessionService SessionService
 @inject NavigationManager Navigation
 
-@if (isChecking)
+@if (_isChecking)
 {
     <div class="container py-4">
         <div class="alert alert-info">Checking your session...</div>
     </div>
 }
-else if (currentUser is null)
+else if (_currentUser is null)
 {
     <div class="container py-4">
         <div class="alert alert-warning">Please sign in to view your campus home.</div>
@@ -21,61 +20,116 @@ else if (currentUser is null)
 }
 else
 {
+    var recentThreads = AppStore.Threads
+        .OrderByDescending(t => t.LastUpdatedAt)
+        .Take(5)
+        .ToList();
+
     <div class="container py-4">
-        <h3>Welcome, @currentUser.DisplayName.</h3>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+            <div>
+                <p class="text-uppercase text-primary small fw-semibold mb-1">Overview</p>
+                <h1 class="h3 mb-0">Welcome, @_currentUser.DisplayName</h1>
+            </div>
+            <a class="btn btn-primary mt-3 mt-md-0" href="/threads">Browse threads</a>
+        </div>
 
-        <div class="row g-4 mt-3">
+        <div class="row g-4">
             <div class="col-lg-8">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h2 class="h5">Your joined threads</h2>
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h2 class="h5 mb-0">Your joined threads</h2>
+                            <span class="badge bg-light text-dark">@_currentUser.JoinedThreadIds.Count</span>
+                        </div>
 
-                        @if (currentUser.JoinedThreadIds.Count == 0)
+                        @if (_currentUser.JoinedThreadIds.Count == 0)
                         {
-                            <div class="alert alert-info">You have not joined any thread yet.</div>
+                            <div class="alert alert-info rounded-3 mb-0">You have not joined any thread yet.</div>
                         }
                         else
                         {
-                            foreach (var threadId in currentUser.JoinedThreadIds)
-                            {
-                                var thread = SeedData.Threads.FirstOrDefault(t => t.Id == threadId);
-                                if (thread is not null)
+                            <div class="list-group list-group-flush">
+                                @foreach (var threadId in _currentUser.JoinedThreadIds)
                                 {
-                                    var unread = currentUser.UnreadThreadCounts.TryGetValue(thread.Id, out var value) ? value : 0;
-                                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                        <a href="/threads/@thread.Id" class="text-decoration-none">@thread.Name</a>
-                                        @if (unread > 0)
-                                        {
-                                            <span class="badge bg-warning text-dark">@unread</span>
-                                        }
-                                    </div>
+                                    var thread = AppStore.Threads.FirstOrDefault(t => t.Id == threadId);
+                                    if (thread is not null)
+                                    {
+                                        var unread = _currentUser.UnreadThreadCounts.TryGetValue(thread.Id, out var value) ? value : 0;
+                                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0" href="/threads/@thread.Id">
+                                            <div>
+                                                <div class="fw-semibold">@thread.Name</div>
+                                                <small class="text-muted">@(thread.IsPrivate ? "Private thread" : "Public thread")</small>
+                                            </div>
+                                            @if (unread > 0)
+                                            {
+                                                <span class="badge bg-warning text-dark rounded-pill">@unread</span>
+                                            }
+                                        </a>
+                                    }
                                 }
-                            }
-                        }
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h2 class="h5">Popular threads</h2>
-                        @foreach (var thread in SeedData.Threads.Take(5))
-                        {
-                            <div class="mb-2">
-                                <a href="/threads/@thread.Id" class="text-decoration-none">@thread.Name</a>
                             </div>
                         }
                     </div>
                 </div>
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h2 class="h5">Direct chats</h2>
-                        @foreach (var chat in SeedData.Chats.Where(c => c.User1Id == currentUser.Id || c.User2Id == currentUser.Id).Take(4))
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle me-3" style="width: 48px; height: 48px; background: @_currentUser.AvatarColor; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">@_currentUser.DisplayName.Substring(0, 1).ToUpper()</div>
+                            <div>
+                                <div class="fw-semibold">@_currentUser.DisplayName</div>
+                                <small class="text-muted">@_currentUser.CourseStudying</small>
+                            </div>
+                        </div>
+                        <div class="small text-muted">Year @_currentUser.StudyYear</div>
+                        @if (_currentUser.IsAuditUser)
                         {
-                            var otherUserId = chat.User1Id == currentUser.Id ? chat.User2Id : chat.User1Id;
-                            var otherUser = SeedData.Users.FirstOrDefault(u => u.Id == otherUserId);
-                            <div class="mb-2">
-                                <a href="/chats/@chat.Id" class="text-decoration-none">@(otherUser?.DisplayName ?? "Unknown")</a>
+                            <div class="mt-3 badge bg-danger-subtle text-danger rounded-pill">Audit role active</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-3">Recent threads</h2>
+                        @if (!recentThreads.Any())
+                        {
+                            <div class="alert alert-info rounded-3 mb-0">No threads have been created yet.</div>
+                        }
+                        else
+                        {
+                            <div class="d-grid gap-2">
+                                @foreach (var thread in recentThreads)
+                                {
+                                    <a href="/threads/@thread.Id" class="text-decoration-none text-body rounded-3 border p-2">@thread.Name</a>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-3">Direct chats</h2>
+                        @if (!AppStore.Chats.Any(c => c.User1Id == _currentUser.Id || c.User2Id == _currentUser.Id))
+                        {
+                            <div class="alert alert-info rounded-3 mb-0">You do not have any direct chats yet.</div>
+                        }
+                        else
+                        {
+                            <div class="d-grid gap-2">
+                                @foreach (var chat in AppStore.Chats.Where(c => c.User1Id == _currentUser.Id || c.User2Id == _currentUser.Id).Take(4))
+                                {
+                                    var otherUserId = chat.User1Id == _currentUser.Id ? chat.User2Id : chat.User1Id;
+                                    var otherUser = AppStore.Users.FirstOrDefault(u => u.Id == otherUserId);
+                                    <a class="d-flex align-items-center gap-2 text-decoration-none text-body rounded-3 border p-2" href="/chats/@chat.Id">
+                                        <div class="rounded-circle" style="width: 28px; height: 28px; background: @(otherUser?.AvatarColor ?? "#4f46e5"); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">@(otherUser?.DisplayName.Substring(0,1).ToUpper() ?? "?")</div>
+                                        <span>@(otherUser?.DisplayName ?? "Unknown")</span>
+                                    </a>
+                                }
                             </div>
                         }
                     </div>
@@ -86,18 +140,18 @@ else
 }
 
 @code {
-    private CampusChatApp.Models.User? currentUser;
-    private bool isChecking = true;
+private CampusChatApp.Models.User? _currentUser;
+private bool _isChecking = true;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
             return;
 
-        currentUser = await SessionService.GetCurrentUserAsync();
-        isChecking = false;
+    _currentUser = await SessionService.GetCurrentUserAsync();
+    _isChecking = false;
 
-        if (currentUser is null)
+    if (_currentUser is null)
         {
             Navigation.NavigateTo("/signin");
         }

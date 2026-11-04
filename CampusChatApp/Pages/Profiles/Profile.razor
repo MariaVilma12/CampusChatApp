@@ -1,7 +1,6 @@
 @page "/profile"
 @page "/profiles/{id:int}"
 @layout MainLayout
-@using CampusChat.Services
 @using CampusChatApp.Models
 @using CampusChatApp.Services
 @inject UserService UserService
@@ -10,7 +9,7 @@
 
 <PageTitle>Profile</PageTitle>
 
-@if (user is null)
+@if (_user is null)
 {
     <div class="container py-4">
         <div class="alert alert-danger">User not found.</div>
@@ -19,20 +18,58 @@
 else
 {
     <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1>@user.DisplayName</h1>
-            @if (isOwnProfile)
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <p class="text-uppercase text-primary small fw-semibold mb-1">Profile</p>
+                <h1 class="h3 mb-0">@_user.DisplayName</h1>
+            </div>
+            @if (_isOwnProfile)
             {
                 <button class="btn btn-primary" @onclick="NavigateToEditProfile">Edit profile</button>
             }
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <p><strong>About:</strong> @user.About</p>
-                <p><strong>Course studying:</strong> @user.CourseStudying</p>
-                <p><strong>Year:</strong> @user.StudyYear</p>
-                <p><strong>Joined threads:</strong> @string.Join(", ", user.JoinedThreadIds)</p>
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="rounded-circle me-3" style="width: 56px; height: 56px; background: @_user.AvatarColor; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">@_user.DisplayName.Substring(0, 1).ToUpper()</div>
+                    <div>
+                        <div class="fw-bold fs-5">@_user.DisplayName</div>
+                        <small class="text-muted">@_user.CourseStudying · Year @_user.StudyYear</small>
+                        @if (_user.IsAuditUser)
+                        {
+                            <div class="mt-2 badge bg-danger-subtle text-danger rounded-pill">Audit role</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="bg-light rounded-3 p-3 h-100">
+                            <div class="text-muted small mb-1">About</div>
+                            <div>@_user.About</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="bg-light rounded-3 p-3 h-100">
+                            <div class="text-muted small mb-1">Study information</div>
+                            <div><strong>Course:</strong> @_user.CourseStudying</div>
+                            <div><strong>Year:</strong> @_user.StudyYear</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <strong>Joined threads:</strong>
+                    @if (_user.JoinedThreadIds.Count == 0)
+                    {
+                        <span class="text-muted"> No joined threads yet</span>
+                    }
+                    else
+                    {
+                        <span>@string.Join(", ", _user.JoinedThreadIds)</span>
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -42,8 +79,8 @@ else
     [Parameter]
     public int Id { get; set; }
 
-    private User? user;
-    private bool isOwnProfile;
+private User? _user;
+private bool _isOwnProfile;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -51,13 +88,13 @@ else
 
         if (Id > 0)
         {
-            user = UserService.GetUser(Id);
-            isOwnProfile = currentUser is not null && user is not null && currentUser.Id == user.Id;
+            _user = UserService.GetUser(Id);
+            _isOwnProfile = currentUser is not null && _user is not null && currentUser.Id == _user.Id;
             return;
         }
 
-        user = currentUser ?? UserService.GetUser(1);
-        isOwnProfile = currentUser is not null && user is not null;
+        _user = currentUser ?? UserService.GetUser(1);
+        _isOwnProfile = currentUser is not null && _user is not null;
     }
 
     private void NavigateToEditProfile()

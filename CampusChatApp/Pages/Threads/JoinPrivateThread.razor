@@ -11,24 +11,24 @@
 <div class="container py-4">
     <h1>Join a private thread</h1>
 
-    @if (currentUser is null)
+    @if (_currentUser is null)
     {
         <div class="alert alert-warning">Please sign in first.</div>
     }
-    else if (!string.IsNullOrEmpty(message))
+    else if (!string.IsNullOrEmpty(_message))
     {
-        <div class="alert @(isSuccess ? "alert-success" : "alert-danger")">@message</div>
+        <div class="alert @(_isSuccess ? "alert-success" : "alert-danger")">@_message</div>
     }
 
     <EditForm Model="this" OnValidSubmit="JoinThread">
         <div class="card shadow-sm p-3">
             <div class="mb-3">
                 <label class="form-label">Thread ID</label>
-                <InputNumber class="form-control" @bind-Value="threadId" />
+                <InputNumber class="form-control" @bind-Value="_threadId" />
             </div>
             <div class="mb-3">
                 <label class="form-label">Invite code</label>
-                <InputText class="form-control" @bind-Value="code" placeholder="Enter join code" />
+                <InputText class="form-control" @bind-Value="_code" placeholder="Enter join code" />
             </div>
             <button type="submit" class="btn btn-primary">Join thread</button>
         </div>
@@ -36,47 +36,47 @@
 </div>
 
 @code {
-    private User? currentUser;
-    private int threadId;
-    private string code = string.Empty;
-    private string message = string.Empty;
-    private bool isSuccess;
+    private User? _currentUser;
+    private int _threadId;
+    private string _code = string.Empty;
+    private string _message = string.Empty;
+    private bool _isSuccess;
 
     protected override async Task OnInitializedAsync()
     {
-        currentUser = await SessionService.GetCurrentUserAsync();
+        _currentUser = await SessionService.GetCurrentUserAsync();
     }
 
     private async Task JoinThread()
     {
-        if (currentUser is null)
+        if (_currentUser is null)
         {
-            message = "Please sign in first.";
-            isSuccess = false;
+            _message = "Please sign in first.";
+            _isSuccess = false;
             return;
         }
 
-        var thread = ThreadService.GetThread(threadId);
+        var thread = ThreadService.GetThread(_threadId);
         if (thread is null)
         {
-            message = "Thread not found.";
-            isSuccess = false;
+            _message = "Thread not found.";
+            _isSuccess = false;
             return;
         }
 
-        if (!ThreadService.CanAccessThread(thread, currentUser, code))
+        if (!ThreadService.CanAccessThread(thread, _currentUser, _code))
         {
-            message = "Incorrect code. This private thread requires a valid access code.";
-            isSuccess = false;
+            _message = "Incorrect code. This private thread requires a valid access code.";
+            _isSuccess = false;
             return;
         }
 
-        if (!currentUser.JoinedThreadIds.Contains(threadId))
-            currentUser.JoinedThreadIds.Add(threadId);
+        if (!_currentUser.JoinedThreadIds.Contains(_threadId))
+            _currentUser.JoinedThreadIds.Add(_threadId);
 
-        message = $"You joined '{thread.Name}'.";
-        isSuccess = true;
+        _message = $"You joined '{thread.Name}'.";
+        _isSuccess = true;
         await Task.Delay(300);
-        Navigation.NavigateTo($"/threads/{threadId}");
+        Navigation.NavigateTo($"/threads/{_threadId}");
     }
 }

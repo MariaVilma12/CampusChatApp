@@ -1,40 +1,38 @@
 @namespace CampusChatApp.Components.Chat
-@using CampusChatApp.Models
 @using CampusChatApp.Services
 @using ChatMessageModel = CampusChatApp.Models.ChatMessage
-@inject ChatService ChatService
 @inject SessionService SessionService
-@inject NavigationManager Navigation
+@inject CampusChatStateService CampusChatStateService
 
 <div class="input-group mt-3">
-    <input type="text" class="form-control" @bind="messageText" placeholder="Type a message..." />
+    <input type="text" class="form-control" @bind="_messageText" placeholder="Type a message..." />
     <button class="btn btn-primary" type="button" @onclick="SendMessage">Send</button>
 </div>
 
-@if (!string.IsNullOrWhiteSpace(errorMessage))
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
 {
-    <div class="alert alert-danger mt-2">@errorMessage</div>
+    <div class="alert alert-danger mt-2">@_errorMessage</div>
 }
 
 @code {
     [Parameter]
     public int ChatId { get; set; }
 
-    private string messageText = string.Empty;
-    private string errorMessage = string.Empty;
+    private string _messageText = string.Empty;
+    private string _errorMessage = string.Empty;
 
     private async Task SendMessage()
     {
-        if (string.IsNullOrWhiteSpace(messageText))
+        if (string.IsNullOrWhiteSpace(_messageText))
         {
-            errorMessage = "Message cannot be empty.";
+            _errorMessage = "Message cannot be empty.";
             return;
         }
 
         var currentUser = await SessionService.GetCurrentUserAsync();
         if (currentUser is null)
         {
-            errorMessage = "Please sign in to send a message.";
+            _errorMessage = "Please sign in to send a message.";
             return;
         }
 
@@ -43,12 +41,13 @@
             Id = DateTime.UtcNow.Millisecond,
             SenderId = currentUser.Id,
             SenderName = currentUser.DisplayName,
-            Text = messageText.Trim(),
+            Text = _messageText.Trim(),
             SentAt = DateTime.Now
         });
 
-        messageText = string.Empty;
-        errorMessage = string.Empty;
-        Navigation.NavigateTo($"/chats/{ChatId}", forceLoad: true);
+        _messageText = string.Empty;
+        _errorMessage = string.Empty;
+        CampusChatStateService.NotifyChanged();
+        await InvokeAsync(StateHasChanged);
     }
 }

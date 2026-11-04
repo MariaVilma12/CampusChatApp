@@ -32,7 +32,7 @@ Private threads are marked separately from public threads. Users must provide th
 
 ## 6. How do we protect application data?
 
-The current version uses in-memory seed data, so no external database is exposed. If a database is added later, authentication, authorization, and secure database access should be implemented.
+The current version uses an in-memory application store, so no external database is exposed. If a database is added later, authentication, authorization, and secure database access should be implemented.
 
 ---
 

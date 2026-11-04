@@ -1,6 +1,5 @@
 @page "/chats/{id:int}"
 @layout MainLayout
-@using CampusChat.Services
 @using CampusChatApp.Components.Chat
 @using CampusChatApp.Models
 @using CampusChatApp.Services
@@ -9,22 +8,23 @@
 @inject SessionService SessionService
 @inject ChatService ChatService
 @inject UserService UserService
+@inject CampusChatStateService CampusChatStateService
 
 <PageTitle>Chat Details</PageTitle>
 
-@if (currentUser is null)
+@if (_currentUser is null)
 {
     <div class="container py-4">
         <div class="alert alert-warning">Please sign in to view this chat.</div>
     </div>
 }
-else if (chat is null)
+else if (_chat is null)
 {
     <div class="container py-4">
         <div class="alert alert-danger">Chat not found.</div>
     </div>
 }
-else if (!SessionService.CanAccessChat(chat, currentUser))
+else if (!SessionService.CanAccessChat(_chat, _currentUser))
 {
     <div class="container py-4">
         <div class="alert alert-warning">You do not have access to this direct chat.</div>
@@ -32,19 +32,19 @@ else if (!SessionService.CanAccessChat(chat, currentUser))
 }
 else
 {
-    var otherUserId = chat.User1Id == currentUser.Id ? chat.User2Id : chat.User1Id;
+    var otherUserId = _chat.User1Id == _currentUser.Id ? _chat.User2Id : _chat.User1Id;
     var otherUser = UserService.GetUser(otherUserId);
 
     <div class="container py-4">
         <h1>Chat with @((otherUser?.DisplayName ?? "Unknown"))</h1>
         <div class="card shadow-sm p-3 mb-3">
-            @if (!chat.Messages.Any())
+            @if (!_chat.Messages.Any())
             {
                 <div class="alert alert-info">This chat has no messages yet.</div>
             }
             else
             {
-                foreach (var message in chat.Messages)
+                foreach (var message in _chat.Messages)
                 {
                     <ChatMessage Message="message" />
                 }
@@ -58,38 +58,25 @@ else
     [Parameter]
     public int Id { get; set; }
 
-    private User? currentUser;
-    private DirectChat? chat;
-    private CancellationTokenSource? _refreshToken;
+    private User? _currentUser;
+    private DirectChat? _chat;
 
     protected override async Task OnParametersSetAsync()
     {
-        currentUser = await SessionService.GetCurrentUserAsync();
-        chat = ChatService.GetChat(Id);
-
-        _refreshToken?.Cancel();
-        _refreshToken = new CancellationTokenSource();
-        _ = RefreshLoopAsync(_refreshToken.Token);
+        _currentUser = await SessionService.GetCurrentUserAsync();
+        _chat = ChatService.GetChat(Id);
+        CampusChatStateService.DataChanged += HandleDataChanged;
+        await InvokeAsync(StateHasChanged);
     }
 
-    private async Task RefreshLoopAsync(CancellationToken cancellationToken)
+    private async void HandleDataChanged()
     {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            await Task.Delay(2000, cancellationToken);
-            if (cancellationToken.IsCancellationRequested)
-                break;
-
-            if (chat is not null)
-            {
-                await InvokeAsync(StateHasChanged);
-            }
-        }
+        _chat = ChatService.GetChat(Id);
+        await InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
     {
-        _refreshToken?.Cancel();
-        _refreshToken?.Dispose();
+        CampusChatStateService.DataChanged -= HandleDataChanged;
     }
 }

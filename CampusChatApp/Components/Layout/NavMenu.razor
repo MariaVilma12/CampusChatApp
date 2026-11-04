@@ -2,77 +2,69 @@
 @inject SessionService SessionService
 @inject NavigationManager Navigation
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/home">Campus Chat</a>
+<div class="sidebar-header px-3 py-3">
+    <a class="navbar-brand" href="/home">Campus Chat</a>
+</div>
+
+<nav class="nav flex-column nav-scrollable px-3 py-3">
+    <div class="nav-item">
+        <NavLink class="nav-link" href="/home">
+            <span class="bi bi-house-door-fill me-2"></span>
+            Home
+        </NavLink>
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <div class="nav-item">
+        <NavLink class="nav-link" href="/profile">
+            <span class="bi bi-person-fill me-2"></span>
+            Profile
+        </NavLink>
+    </div>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
+    <div class="nav-item">
+        <NavLink class="nav-link" href="/threads">
+            <span class="bi bi-chat-left-text-fill me-2"></span>
+            Threads
+        </NavLink>
+    </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/home">
-                <span class="bi bi-house-door-fill me-2"></span>
-                Home
-            </NavLink>
-        </div>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="/chats">
+            <span class="bi bi-envelope-fill me-2"></span>
+            Direct Chats
+        </NavLink>
+    </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/profile">
-                <span class="bi bi-person-fill me-2"></span>
-                Profile
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/threads">
-                <span class="bi bi-chat-left-text-fill me-2"></span>
-                Threads
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/chats">
-                <span class="bi bi-envelope-fill me-2"></span>
-                Direct Chats
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/signin" @onclick="HandleSignInClick">
-                <span class="bi bi-box-arrow-right me-2"></span>
-                @(isSignedIn ? "Sign Out" : "Sign In")
-            </NavLink>
-        </div>
-
-    </nav>
-</div>
+    <div class="nav-item mt-auto">
+        <NavLink class="nav-link" href="/signin" @onclick="HandleSignInClick">
+            <span class="bi bi-box-arrow-right me-2"></span>
+            @(_isSignedIn ? "Sign Out" : "Sign In")
+        </NavLink>
+    </div>
+</nav>
 
 @code {
-    private bool isSignedIn;
+    private bool _isSignedIn;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
         {
             var user = await SessionService.GetCurrentUserAsync();
-            isSignedIn = user is not null;
+            _isSignedIn = user is not null;
             return;
         }
 
-        isSignedIn = await SessionService.GetCurrentUserAsync() is not null;
+        _isSignedIn = await SessionService.GetCurrentUserAsync() is not null;
         StateHasChanged();
     }
 
     private async Task HandleSignInClick()
     {
-        if (isSignedIn)
+        if (_isSignedIn)
         {
             await SessionService.LogoutAsync();
-            isSignedIn = false;
+            _isSignedIn = false;
             Navigation.NavigateTo("/signin", forceLoad: true);
         }
         else

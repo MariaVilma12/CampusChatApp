@@ -1,16 +1,18 @@
-using CampusChat.Services;
 using CampusChatApp.Components;
 using CampusChatApp.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddScoped<ProtectedSessionStorage>();
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<ThreadService>();
 builder.Services.AddSingleton<ChatService>();
+builder.Services.AddSingleton<CampusChatStateService>();
 builder.Services.AddScoped<SessionService>();
 
 var app = builder.Build();

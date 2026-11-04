@@ -1,61 +1,79 @@
 using CampusChatApp.Data;
+using CampusChatApp.Helpers;
 using CampusChatApp.Models;
 
-namespace CampusChat.Services;
+namespace CampusChatApp.Services;
 
 public class UserService
 {
-    /// <summary>
-    /// Returns all users.
-    /// </summary>
-    public IReadOnlyList<User> GetAllUsers()
-    {
-        return SeedData.Users;
-    }
+    public static IReadOnlyList<User> GetAllUsers() => AppStore.Users;
 
-    /// <summary>
-    /// Returns a user by ID.
-    /// Returns null if no matching user exists.
-    /// </summary>
-    public User? GetUser(int id)
-    {
-        return SeedData.Users.FirstOrDefault(u => u.Id == id);
-    }
+    public User? GetUser(int id) => AppStore.Users.FirstOrDefault(u => u.Id == id);
 
-    public User CreateProfile(string displayName, string about, string courseStudying, int studyYear)
+    public static User CreateProfile(string displayName, string about, string courseStudying, int studyYear, string avatarColor = "#4f46e5", bool isAuditUser = false)
     {
-        var trimmedName = (displayName ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(trimmedName))
-            throw new ArgumentException("Display name is required.", nameof(displayName));
+        var profile = ValidateAndNormalizeProfile(displayName, about, courseStudying, studyYear, avatarColor);
 
         var user = new User
         {
-            Id = SeedData.Users.Count == 0 ? 1 : SeedData.Users.Max(u => u.Id) + 1,
-            DisplayName = trimmedName,
-            About = about?.Trim() ?? string.Empty,
-            CourseStudying = courseStudying?.Trim() ?? string.Empty,
-            StudyYear = studyYear,
+            Id = GetNextUserId(),
+            DisplayName = profile.displayName,
+            About = profile.about,
+            CourseStudying = profile.courseStudying,
+            StudyYear = profile.studyYear,
+            AvatarColor = profile.avatarColor,
+            IsAuditUser = isAuditUser,
             JoinedThreadIds = new List<int>(),
             UnreadThreadCounts = new Dictionary<int, int>()
         };
 
-        SeedData.Users.Add(user);
+        AppStore.Users.Add(user);
         return user;
     }
 
-    public User UpdateProfile(User user, string displayName, string about, string courseStudying, int studyYear)
+    public static User UpdateProfile(User user, string displayName, string about, string courseStudying, int studyYear, string avatarColor = "#4f46e5", bool? isAuditUser = null)
     {
-        if (user is null)
-            throw new ArgumentNullException(nameof(user));
+        ArgumentNullException.ThrowIfNull(user);
 
-        user.DisplayName = (displayName ?? string.Empty).Trim();
-        user.About = about?.Trim() ?? string.Empty;
-        user.CourseStudying = courseStudying?.Trim() ?? string.Empty;
-        user.StudyYear = studyYear;
+        var profile = ValidateAndNormalizeProfile(displayName, about, courseStudying, studyYear, avatarColor);
 
-        if (string.IsNullOrWhiteSpace(user.DisplayName))
-            throw new ArgumentException("Display name is required.", nameof(displayName));
+        user.DisplayName = profile.displayName;
+        user.About = profile.about;
+        user.CourseStudying = profile.courseStudying;
+        user.StudyYear = profile.studyYear;
+        user.AvatarColor = profile.avatarColor;
+
+        if (isAuditUser.HasValue)
+            user.IsAuditUser = isAuditUser.Value;
 
         return user;
+    }
+
+    private static int GetNextUserId() => AppStore.Users.Count == 0 ? 1 : AppStore.Users.Max(u => u.Id) + 1;
+
+    private static (string displayName, string about, string courseStudying, int studyYear, string avatarColor) ValidateAndNormalizeProfile(
+        string? displayName,
+        string? about,
+        string? courseStudying,
+        int studyYear,
+        string? avatarColor)
+    {
+        var normalizedName = (displayName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new ArgumentException("Display name is required.", nameof(displayName));
+
+        if (normalizedName.Length > Constants.MaxDisplayNameLength)
+            throw new ArgumentException($"Display name must be {Constants.MaxDisplayNameLength} characters or fewer.", nameof(displayName));
+
+        var safeColor = string.IsNullOrWhiteSpace(avatarColor)
+            ? "#4f46e5"
+            : avatarColor.Trim();
+
+        return (
+            normalizedName,
+            about?.Trim() ?? string.Empty,
+            courseStudying?.Trim() ?? string.Empty,
+            studyYear,
+            safeColor);
     }
 }

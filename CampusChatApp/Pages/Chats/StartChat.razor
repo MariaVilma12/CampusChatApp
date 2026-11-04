@@ -1,6 +1,5 @@
 @page "/chats/start"
 @layout MainLayout
-@using CampusChat.Services
 @using CampusChatApp.Models
 @using CampusChatApp.Services
 @inject UserService UserService
@@ -13,7 +12,7 @@
 <div class="container py-4">
     <h1>Start a direct chat</h1>
 
-    @if (currentUser is null)
+    @if (_currentUser is null)
     {
         <div class="alert alert-warning">Please sign in to start a chat.</div>
     }
@@ -22,17 +21,17 @@
         <div class="card shadow-sm p-3">
             <div class="mb-3">
                 <label class="form-label">Recipient</label>
-                <input class="form-control" @bind="searchText" @bind:event="oninput" placeholder="Search for a student" />
+                <input class="form-control" @bind="_searchText" @bind:event="oninput" placeholder="Search for a student" />
             </div>
 
-            @if (string.IsNullOrWhiteSpace(searchText))
+            @if (string.IsNullOrWhiteSpace(_searchText))
             {
                 <div class="alert alert-info">Search for a student to start a chat.</div>
             }
             else
             {
                 var matches = UserService.GetAllUsers()
-                    .Where(u => u.Id != currentUser.Id && u.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                    .Where(u => u.Id != _currentUser.Id && u.DisplayName.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
                 if (matches.Count == 0)
@@ -57,23 +56,23 @@
 </div>
 
 @code {
-    private User? currentUser;
-    private string searchText = string.Empty;
+    private User? _currentUser;
+    private string _searchText = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        currentUser = await SessionService.GetCurrentUserAsync();
+        _currentUser = await SessionService.GetCurrentUserAsync();
     }
 
     private void CreateChat(User recipient)
     {
-        if (currentUser is null)
+        if (_currentUser is null)
             return;
 
         var existing = ChatService.GetAllChats()
             .FirstOrDefault(c =>
-                (c.User1Id == currentUser.Id && c.User2Id == recipient.Id) ||
-                (c.User1Id == recipient.Id && c.User2Id == currentUser.Id));
+                (c.User1Id == _currentUser.Id && c.User2Id == recipient.Id) ||
+                (c.User1Id == recipient.Id && c.User2Id == _currentUser.Id));
 
         if (existing is not null)
         {
@@ -83,7 +82,7 @@
 
         var chat = new DirectChat
         {
-            User1Id = currentUser.Id,
+            User1Id = _currentUser.Id,
             User2Id = recipient.Id,
             Messages = new List<CampusChatApp.Models.ChatMessage>()
         };

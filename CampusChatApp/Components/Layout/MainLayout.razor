@@ -1,16 +1,19 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<div class="page campus-shell">
+    <aside class="sidebar">
         <NavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <main class="main-panel">
+        <header class="top-row px-4 py-3">
+            <div class="d-flex align-items-center justify-content-between w-100">
+                <span class="fw-semibold text-primary">Campus Chat</span>
+                <span class="text-muted small">Student community</span>
+            </div>
+        </header>
 
-        <article class="content px-4">
+        <article class="content px-4 py-4">
             @Body
         </article>
     </main>

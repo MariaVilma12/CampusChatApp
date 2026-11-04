@@ -4,5 +4,8 @@ public static class Constants
 {
     public const string AppName = "CampusChat";
     public const int MaxThreadTitleLength = 120;
+    public const int MaxDisplayNameLength = 80;
+    public const int MaxAccessCodeLength = 64;
     public const int MaxPostLength = 1000;
+    public const int MaxReplyLength = 500;
 }

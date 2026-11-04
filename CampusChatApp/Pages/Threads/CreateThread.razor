@@ -1,9 +1,10 @@
 @page "/threads/create"
 @layout MainLayout
-@using CampusChatApp.Data
+@using CampusChatApp.Helpers
 @using CampusChatApp.Models
 @using CampusChatApp.Services
 @inject SessionService SessionService
+@inject ThreadService ThreadService
 @inject NavigationManager Navigation
 
 <PageTitle>Create Thread</PageTitle>
@@ -11,29 +12,29 @@
 <div class="container py-4">
     <h1>Create a thread</h1>
 
-    @if (!string.IsNullOrWhiteSpace(message))
+    @if (!string.IsNullOrWhiteSpace(_message))
     {
-        <div class="alert @(isSuccess ? "alert-success" : "alert-danger")">@message</div>
+        <div class="alert @(_isSuccess ? "alert-success" : "alert-danger")">@_message</div>
     }
 
     <EditForm Model="this" OnValidSubmit="CreateNewThread">
         <div class="card shadow-sm p-3">
             <div class="mb-3">
                 <label class="form-label">Thread title</label>
-                <InputText class="form-control" @bind-Value="threadName" placeholder="Name your thread" />
+                <InputText class="form-control" @bind-Value="_threadName" placeholder="Name your thread" />
             </div>
             <div class="mb-3">
                 <label class="form-label">Access</label>
-                <InputSelect class="form-select" @bind-Value="selectedAccessType">
+                <InputSelect class="form-select" @bind-Value="_selectedAccessType">
                     <option value="public">Public</option>
                     <option value="private">Private</option>
                 </InputSelect>
             </div>
-            @if (selectedAccessType == "private")
+            @if (_selectedAccessType == "private")
             {
                 <div class="mb-3">
                     <label class="form-label">Invite code</label>
-                    <InputText class="form-control" @bind-Value="accessCode" placeholder="Enter code for private thread" />
+                    <InputText class="form-control" @bind-Value="_accessCode" placeholder="Enter code for private thread" />
                 </div>
             }
             <button type="submit" class="btn btn-primary">Create</button>
@@ -42,49 +43,68 @@
 </div>
 
 @code {
-    private string threadName = string.Empty;
-    private string accessCode = string.Empty;
-    private string selectedAccessType = "public";
-    private string message = string.Empty;
-    private bool isSuccess;
+    private string _threadName = string.Empty;
+    private string _accessCode = string.Empty;
+    private string _selectedAccessType = "public";
+    private string _message = string.Empty;
+    private bool _isSuccess;
 
     private async Task CreateNewThread()
     {
         var user = await SessionService.GetCurrentUserAsync();
         if (user is null)
         {
-            message = "Please sign in before creating a thread.";
-            isSuccess = false;
+            _message = "Please sign in before creating a thread.";
+            _isSuccess = false;
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(threadName))
+        if (string.IsNullOrWhiteSpace(_threadName))
         {
-            message = "Thread name cannot be empty.";
-            isSuccess = false;
+            _message = "Thread name cannot be empty.";
+            _isSuccess = false;
             return;
+        }
+
+        var normalizedName = _threadName.Trim();
+        if (normalizedName.Length > Constants.MaxThreadTitleLength)
+        {
+            _message = $"Thread name must be {Constants.MaxThreadTitleLength} characters or fewer.";
+            _isSuccess = false;
+            return;
+        }
+
+        if (_selectedAccessType == "private")
+        {
+            var cleanedAccessCode = _accessCode.Trim();
+            if (string.IsNullOrWhiteSpace(cleanedAccessCode))
+            {
+                _message = "Private threads require an access code.";
+                _isSuccess = false;
+                return;
+            }
+
+            if (cleanedAccessCode.Length > Constants.MaxAccessCodeLength)
+            {
+                _message = $"Access code must be {Constants.MaxAccessCodeLength} characters or fewer.";
+                _isSuccess = false;
+                return;
+            }
         }
 
         var newThread = new CampusChatApp.Models.Thread
         {
-            Id = SeedData.Threads.Count == 0 ? 1 : SeedData.Threads.Max(t => t.Id) + 1,
-            Name = threadName.Trim(),
-            IsPrivate = selectedAccessType == "private",
-            AccessCode = selectedAccessType == "private" ? accessCode.Trim() : null,
+            Id = ThreadService.GetNextThreadId(),
+            Name = normalizedName,
+            IsPrivate = _selectedAccessType == "private",
+            AccessCode = _selectedAccessType == "private" ? _accessCode.Trim() : null,
             Posts = new List<Post>()
         };
 
-        if (newThread.IsPrivate && string.IsNullOrWhiteSpace(newThread.AccessCode))
-        {
-            message = "Private threads require an access code.";
-            isSuccess = false;
-            return;
-        }
-
-        SeedData.Threads.Add(newThread);
+        ThreadService.AddThread(newThread);
         user.JoinedThreadIds.Add(newThread.Id);
-        message = $"Thread '{newThread.Name}' created successfully.";
-        isSuccess = true;
+        _message = $"Thread '{newThread.Name}' created successfully.";
+        _isSuccess = true;
 
         await Task.Delay(200);
         Navigation.NavigateTo($"/threads/{newThread.Id}");
