@@ -48,7 +48,9 @@ else
 
         @if (!_thread.Posts.Any())
         {
-            <div class="alert alert-info">This thread has no posts yet. Start the conversation.</div>
+            <div class="alert alert-info text-center">
+                No posts yet. Please sign in to write posts in this thread.
+            </div>
         }
         else
         {
@@ -114,15 +116,25 @@ else
     private string _errorMessage = string.Empty;
     private string _enteredCode = string.Empty;
     private Dictionary<int, string> _replyTextByPost = new();
-    protected override async Task OnParametersSetAsync()
+    private bool _hasLoadedSession;
+
+    protected override Task OnParametersSetAsync()
     {
         CampusChatStateService.DataChanged -= HandleDataChanged;
-
-        _currentUser = await SessionService.GetCurrentUserAsync();
         _thread = ThreadService.GetThread(Id);
         UpdateUnreadToZero();
-
         CampusChatStateService.DataChanged += HandleDataChanged;
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _hasLoadedSession)
+            return;
+
+        _hasLoadedSession = true;
+        _currentUser = await SessionService.GetCurrentUserAsync();
+        UpdateUnreadToZero();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -156,6 +168,7 @@ else
 
         if (ThreadService.TryJoinPrivateThread(_thread.Id, _enteredCode, _currentUser))
         {
+            await SessionService.SetCurrentUserAsync(_currentUser);
             NavigationManager.NavigateTo($"/threads/{_thread.Id}", forceLoad: true);
         }
         else

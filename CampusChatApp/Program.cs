@@ -17,6 +17,8 @@ builder.Services.AddScoped<SessionService>();
 
 var app = builder.Build();
 
+AppStateBootstrap.Initialize();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);

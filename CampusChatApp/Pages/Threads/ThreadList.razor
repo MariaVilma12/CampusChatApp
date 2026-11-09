@@ -26,7 +26,10 @@
 
     @if (_currentUser is null)
     {
-        <div class="alert alert-warning rounded-3">Please sign in to view threads.</div>
+        <div class="alert alert-warning rounded-3 d-flex justify-content-between align-items-center">
+            <span>Please sign in to view full thread access.</span>
+            <button class="btn btn-sm btn-primary" @onclick="GoToSignIn">Sign in</button>
+        </div>
     }
     else
     {
@@ -53,7 +56,7 @@
                             <h3 class="h5 mb-1">
                                 <a href="/threads/@thread.Id" class="text-decoration-none text-dark">@thread.Name</a>
                             </h3>
-                            <p class="text-muted mb-2">@(thread.IsPrivate ? "Private thread" : "Public thread")</p>
+                            <p class="text-muted mb-2">@thread.Description</p>
                             @if (thread.IsPrivate && !canViewThread)
                             {
                                 <small class="text-muted">Locked. Requires access code to view posts.</small>
@@ -128,5 +131,10 @@
         ThreadService.LeaveThread(threadId, _currentUser);
         await SessionService.SetCurrentUserAsync(_currentUser);
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void GoToSignIn()
+    {
+        Navigation.NavigateTo("/signin");
     }
 }

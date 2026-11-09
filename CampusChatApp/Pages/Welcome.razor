@@ -1,0 +1,32 @@
+@page "/"
+@page "/welcome"
+@layout MainLayout
+@using CampusChatApp.Services
+@inject NavigationManager Navigation
+
+<PageTitle>Welcome</PageTitle>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 text-center">
+            <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5">
+                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill mb-3 align-self-center">Campus Chat</span>
+                <h1 class="display-6 fw-bold mb-3">Welcome to your campus community</h1>
+                <p class="text-muted mb-4">
+                    Connect with students, lecturers, and auditors in one welcoming campus space.
+                </p>
+
+                <button class="btn btn-primary btn-lg px-4" @onclick="GoToSignIn">
+                    Sign In
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void GoToSignIn()
+    {
+        Navigation.NavigateTo("/signin");
+    }
+}
