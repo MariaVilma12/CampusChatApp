@@ -78,9 +78,10 @@
                             }
                             @if (_currentUser.JoinedThreadIds.Contains(thread.Id))
                             {
+                                <button class="btn btn-sm btn-primary mt-2 me-2" @onclick="() => JoinThread(thread.Id)">Join</button>
                                 <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="() => LeaveThread(thread.Id)">Leave</button>
                             }
-                            else if (thread.IsPrivate)
+                            else
                             {
                                 <button class="btn btn-sm btn-primary mt-2" @onclick="() => JoinThread(thread.Id)">Join</button>
                             }
