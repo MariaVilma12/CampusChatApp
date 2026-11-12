@@ -1,75 +1,98 @@
 ﻿@using CampusChatApp.Services
+@using CampusChatApp.Models
+@implements IDisposable
 @inject SessionService SessionService
 @inject NavigationManager Navigation
 
 <div class="sidebar-header px-3 py-3">
-    <NavLink class="navbar-brand" href="/home">Campus Chat</NavLink>
+    <NavLink class="navbar-brand" href="/" Match="NavLinkMatch.All">Campus Chat</NavLink>
 </div>
 
 <nav class="nav flex-column nav-scrollable px-3 py-3">
     <div class="nav-item">
-        <NavLink class="nav-link" href="/home">
+        <NavLink class="nav-link" href="@(_currentUser is null ? "/" : "/home")" Match="NavLinkMatch.All">
             <span class="bi bi-house-door-fill me-2"></span>
             Home
         </NavLink>
     </div>
 
-    <div class="nav-item">
-        <NavLink class="nav-link" href="/profile">
-            <span class="bi bi-person-fill me-2"></span>
-            Profile
-        </NavLink>
-    </div>
+    @if (_currentUser is not null)
+    {
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/threads">
+                <span class="bi bi-chat-left-text-fill me-2"></span>
+                Threads
+            </NavLink>
+        </div>
 
-    <div class="nav-item">
-        <NavLink class="nav-link" href="/threads">
-            <span class="bi bi-chat-left-text-fill me-2"></span>
-            Threads
-        </NavLink>
-    </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/profile">
+                <span class="bi bi-person-circle me-2"></span>
+                Profile
+            </NavLink>
+        </div>
 
-    <div class="nav-item">
-        <NavLink class="nav-link" href="/chats">
-            <span class="bi bi-envelope-fill me-2"></span>
-            Direct Chats
-        </NavLink>
-    </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/chats">
+                <span class="bi bi-envelope-fill me-2"></span>
+                Messages
+            </NavLink>
+        </div>
 
-    <div class="nav-item mt-auto">
-        <NavLink class="nav-link" href="/signin" @onclick="HandleSignInClick">
-            <span class="bi bi-box-arrow-right me-2"></span>
-            @(_isSignedIn ? "Sign Out" : "Sign In")
-        </NavLink>
-    </div>
+        @if (_currentUser.IsAuditUser)
+        {
+            <div class="nav-item">
+                <NavLink class="nav-link" href="/audit">
+                    <span class="bi bi-shield-check me-2"></span>
+                    Conversation review
+                </NavLink>
+            </div>
+        }
+
+        <div class="nav-item mt-auto">
+            <button class="nav-link w-100 border-0 bg-transparent text-start" @onclick="SignOut">
+                <span class="bi bi-box-arrow-right me-2"></span>
+                Sign out
+            </button>
+        </div>
+    }
+
 </nav>
 
 @code {
-    private bool _isSignedIn;
+    private User? _currentUser;
+
+    protected override void OnInitialized()
+    {
+        SessionService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
-        {
-            var user = await SessionService.GetCurrentUserAsync();
-            _isSignedIn = user is not null;
             return;
-        }
 
-        _isSignedIn = await SessionService.GetCurrentUserAsync() is not null;
-        StateHasChanged();
+        _currentUser = await SessionService.GetCurrentUserAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
-    private async Task HandleSignInClick()
+    private void HandleAuthenticationStateChanged(User? user)
     {
-        if (_isSignedIn)
+        _ = InvokeAsync(() =>
         {
-            await SessionService.LogoutAsync();
-            _isSignedIn = false;
-            Navigation.NavigateTo("/signin", forceLoad: true);
-        }
-        else
-        {
-            Navigation.NavigateTo("/signin");
-        }
+            _currentUser = user;
+            StateHasChanged();
+        });
+    }
+
+    private async Task SignOut()
+    {
+        await SessionService.LogoutAsync();
+        Navigation.NavigateTo("/signin");
+    }
+
+    public void Dispose()
+    {
+        SessionService.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
     }
 }

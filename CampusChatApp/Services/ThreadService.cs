@@ -108,6 +108,8 @@ public class ThreadService
             return;
 
         ArgumentNullException.ThrowIfNull(post);
+        if (!CanPostToThread(thread, post.AuthorId))
+            throw new InvalidOperationException("You do not have permission to post in this thread.");
 
         thread.Posts.Add(post);
         thread.LastUpdatedAt = DateTime.UtcNow;
@@ -128,6 +130,9 @@ public class ThreadService
         if (post is null)
             return;
 
+        if (!CanPostToThread(thread, reply.AuthorId))
+            throw new InvalidOperationException("You do not have permission to reply in this thread.");
+
         post.Replies.Add(reply);
         thread.LastUpdatedAt = DateTime.UtcNow;
     }
@@ -142,7 +147,7 @@ public class ThreadService
         if (post is null)
             return false;
 
-        if (post.AuthorId != currentUser.Id && !currentUser.IsAuditUser)
+        if (post.AuthorId != currentUser.Id)
             return false;
 
         thread.Posts.Remove(post);
@@ -164,5 +169,14 @@ public class ThreadService
         user.UnreadThreadCounts.TryAdd(threadId, 0);
 
         user.UnreadThreadCounts[threadId] += 1;
+    }
+
+    private static bool CanPostToThread(ThreadModel thread, int authorId)
+    {
+        var author = AppStore.Users.FirstOrDefault(user => user.Id == authorId);
+        if (author is null || (thread.IsPrivate && author.IsAuditUser))
+            return false;
+
+        return !thread.IsPrivate || author.JoinedThreadIds.Contains(thread.Id);
     }
 }

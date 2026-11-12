@@ -1,4 +1,6 @@
 using CampusChatApp.Data;
+using CampusChatApp.Models;
+using ThreadModel = CampusChatApp.Models.Thread;
 
 namespace CampusChatApp.Services;
 
@@ -6,99 +8,80 @@ public static class AppStateBootstrap
 {
     public static void Initialize()
     {
-        _ = AppStore.Users;
-        _ = AppStore.Threads;
-        _ = AppStore.Chats;
-
         if (AppStore.Users.Count == 0)
         {
-            AppStore.Users.Add(new CampusChatApp.Models.User
-            {
-                Id = 1,
-                DisplayName = "Maya Reyes",
-                About = "Computer Science student focused on software engineering and web apps.",
-                CourseStudying = "Computer Science",
-                StudyYear = 2,
-                AvatarColor = "#5B8DEF",
-                IsAuditUser = false,
-                JoinedThreadIds = new List<int>(),
-                UnreadThreadCounts = new Dictionary<int, int>()
-            });
-
-            AppStore.Users.Add(new CampusChatApp.Models.User
-            {
-                Id = 2,
-                DisplayName = "Ethan Cole",
-                About = "Interested in data systems, cloud tools, and backend services.",
-                CourseStudying = "Data Engineering",
-                StudyYear = 3,
-                AvatarColor = "#2FBF71",
-                IsAuditUser = false,
-                JoinedThreadIds = new List<int>(),
-                UnreadThreadCounts = new Dictionary<int, int>()
-            });
-
-            AppStore.Users.Add(new CampusChatApp.Models.User
-            {
-                Id = 3,
-                DisplayName = "Dr. Sofia Grant",
-                About = "Lecturer in software architecture and systems design.",
-                CourseStudying = "Software Architecture",
-                StudyYear = 0,
-                AvatarColor = "#9B6BFF",
-                IsAuditUser = false,
-                JoinedThreadIds = new List<int>(),
-                UnreadThreadCounts = new Dictionary<int, int>()
-            });
-
-            AppStore.Users.Add(new CampusChatApp.Models.User
-            {
-                Id = 4,
-                DisplayName = "Campus Auditor",
-                About = "Reviews platform compliance, safety, and message auditing.",
-                CourseStudying = "Audit & Compliance",
-                StudyYear = 0,
-                AvatarColor = "#EF5A5A",
-                IsAuditUser = true,
-                JoinedThreadIds = new List<int>(),
-                UnreadThreadCounts = new Dictionary<int, int>()
-            });
+            AppStore.Users.AddRange(
+            [
+                new User
+                {
+                    Id = 1,
+                    DisplayName = "Avery Patel",
+                    About = "Computer science student who enjoys building accessible web apps.",
+                    CourseStudying = "Computer Science",
+                    StudyYear = 2,
+                    AvatarColor = "#0f766e"
+                },
+                new User
+                {
+                    Id = 2,
+                    DisplayName = "Milo Jensen",
+                    About = "Interested in cloud platforms, data, and team projects.",
+                    CourseStudying = "Information Technology",
+                    StudyYear = 3,
+                    AvatarColor = "#c2410c"
+                },
+                new User
+                {
+                    Id = 3,
+                    DisplayName = "Nia Okafor",
+                    About = "First-year software engineering student and campus volunteer.",
+                    CourseStudying = "Software Engineering",
+                    StudyYear = 1,
+                    AvatarColor = "#6d28d9"
+                },
+                new User
+                {
+                    Id = 4,
+                    DisplayName = "Community Reviewer",
+                    About = "Read-only access for campus community review.",
+                    CourseStudying = "Campus Services",
+                    IsAuditUser = true,
+                    AvatarColor = "#be123c"
+                }
+            ]);
         }
 
         if (AppStore.Threads.Count == 0)
         {
-            AppStore.Threads.Add(new CampusChatApp.Models.Thread
-            {
-                Id = 1,
-                Name = "General",
-                Description = "General discussion for all campus students.",
-                LastUpdatedAt = DateTime.UtcNow,
-                IsPrivate = false,
-                AccessCode = null,
-                Posts = new List<CampusChatApp.Models.Post>()
-            });
-
-            AppStore.Threads.Add(new CampusChatApp.Models.Thread
-            {
-                Id = 2,
-                Name = "Backend C# & .NET",
-                Description = "Help and collaboration for C# and ASP.NET assignments.",
-                LastUpdatedAt = DateTime.UtcNow.AddMinutes(-15),
-                IsPrivate = false,
-                AccessCode = null,
-                Posts = new List<CampusChatApp.Models.Post>()
-            });
-
-            AppStore.Threads.Add(new CampusChatApp.Models.Thread
-            {
-                Id = 3,
-                Name = "Exam Prep Study Group🔒",
-                Description = "Private study group for final preparations.",
-                LastUpdatedAt = DateTime.UtcNow.AddHours(-1),
-                IsPrivate = true,
-                AccessCode = "secret123",
-                Posts = new List<CampusChatApp.Models.Post>()
-            });
+            AppStore.Threads.AddRange(
+            [
+                new ThreadModel
+                {
+                    Id = 1,
+                    Name = "General",
+                    Description = "General discussion for all campus students.",
+                    LastUpdatedAt = DateTime.UtcNow,
+                    Posts = new List<Post>()
+                },
+                new ThreadModel
+                {
+                    Id = 2,
+                    Name = "Backend C# & .NET",
+                    Description = "Help and collaboration for C# and ASP.NET assignments.",
+                    LastUpdatedAt = DateTime.UtcNow,
+                    Posts = new List<Post>()
+                },
+                new ThreadModel
+                {
+                    Id = 3,
+                    Name = "Exam Prep Study Group🔒",
+                    Description = "Private study group for final preparations.",
+                    LastUpdatedAt = DateTime.UtcNow,
+                    IsPrivate = true,
+                    AccessCode = "secret123",
+                    Posts = new List<Post>()
+                }
+            ]);
         }
     }
 }

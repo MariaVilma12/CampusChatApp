@@ -36,6 +36,12 @@
             return;
         }
 
+        if (currentUser.IsAuditUser)
+        {
+            _errorMessage = "Auditor profiles have read-only access to direct messages.";
+            return;
+        }
+
         ChatService.AddMessage(ChatId, new ChatMessageModel
         {
             Id = DateTime.UtcNow.Millisecond,

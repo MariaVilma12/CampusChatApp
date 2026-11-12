@@ -25,3 +25,6 @@ obj/
 # Windows
 Thumbs.db
 Desktop.ini
+
+# Local account database
+CampusChatApp/campuschat.db*

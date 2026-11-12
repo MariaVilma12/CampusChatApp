@@ -1,47 +1,19 @@
-﻿# Safety Considerations
+# Safety Considerations
 
-## 1. How do we prevent users from accessing information they should not see?
+## Demo identity and access
 
-The application controls access through user roles. Normal users can access public threads and their own conversations. Private threads require an access code before joining. The Auditor user has special permissions to view all threads and direct chats.
+The sign-in screen selects a preloaded demo profile; it does not verify a real identity. Anyone who can reach the app can choose any profile, including the auditor profile. The auditor view and private-thread checks are classroom-demo behavior, not a security boundary.
 
----
+Do not expose this app to untrusted networks or use real personal, confidential, or sensitive information.
 
-## 2. How do we handle user input safely?
+## Data and private threads
 
-All user input is validated before being stored or displayed. Empty posts, replies, and messages are prevented. Input validation reduces the risk of invalid data being added to the application.
+Profiles, threads, access codes, posts, chats, messages, memberships, and unread counts are stored in memory and disappear when the application restarts. The seeded private thread uses the public demo code `secret123`; it is kept in memory as plain text. Never reuse this code or enter real secrets.
 
----
+## Input handling
 
-## 3. How do we protect user sessions?
+The app validates required thread, post, reply, and message fields and enforces length limits. Blazor encodes displayed text by default. These checks improve application behavior but do not replace production-grade security controls.
 
-The selected user session is stored using Protected Session Storage. This prevents the user selection from being lost when navigating between pages during the same browser session.
+## Production requirements
 
----
-
-## 4. How do we prevent unauthorized changes?
-
-Users can only modify their own information and content. Service classes control access to application data instead of allowing pages to directly modify stored data.
-
----
-
-## 5. How do we handle private threads?
-
-Private threads are marked separately from public threads. Users must provide the correct access code before they can view the content. This prevents unauthorized users from joining restricted discussions.
-
----
-
-## 6. How do we protect application data?
-
-The current version uses an in-memory application store, so no external database is exposed. If a database is added later, authentication, authorization, and secure database access should be implemented.
-
----
-
-## 7. What improvements could be made in the future?
-
-Future security improvements could include ASP.NET Core Identity authentication, password management, role-based authorization, database security, encrypted communication, and better audit logging.
-
----
-
-## Conclusion
-
-Security has been considered throughout the design by separating responsibilities, validating input, controlling access, and managing user sessions safely. The current solution provides basic protection suitable for the scope of this assignment.
+Before production use, replace profile selection with real authentication and server-side authorization, persist data with appropriate access controls, hash private-thread secrets, and add audit logging and abuse protections.

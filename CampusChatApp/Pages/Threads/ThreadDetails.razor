@@ -38,6 +38,8 @@ else if (!SessionService.CanAccessThread(_thread, _currentUser))
 }
 else
 {
+    var isReadOnlyThread = _currentUser.IsAuditUser && _thread.IsPrivate;
+
     <div class="container py-4">
         <h1>@_thread.Name</h1>
         <div class="card shadow-sm mb-4">
@@ -49,7 +51,7 @@ else
         @if (!_thread.Posts.Any())
         {
             <div class="alert alert-info text-center">
-                No posts yet. Please sign in to write posts in this thread.
+                No posts yet.
             </div>
         }
         else
@@ -57,7 +59,7 @@ else
             foreach (var post in _thread.Posts)
             {
                 var author = AppStore.Users.FirstOrDefault(u => u.Id == post.AuthorId);
-                var canDeletePost = _currentUser is not null && (post.AuthorId == _currentUser.Id || _currentUser.IsAuditUser);
+                var canDeletePost = post.AuthorId == _currentUser.Id;
                 <div class="card mb-3 shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -81,28 +83,38 @@ else
                                 </div>
                             }
                         }
-                        <div class="mt-2">
-                            <textarea class="form-control form-control-sm mb-2"
-                                      rows="2"
-                                      value="@GetReplyText(post.Id)"
-                                      @oninput="e => SetReplyText(post.Id, e.Value?.ToString())"
-                                      placeholder="Write a reply..."></textarea>
-                            <button class="btn btn-sm btn-outline-primary" @onclick="() => AddReply(post.Id)">Reply</button>
-                        </div>
+                        @if (!isReadOnlyThread)
+                        {
+                            <div class="mt-2">
+                                <textarea class="form-control form-control-sm mb-2"
+                                          rows="2"
+                                          value="@GetReplyText(post.Id)"
+                                          @oninput="e => SetReplyText(post.Id, e.Value?.ToString())"
+                                          placeholder="Write a reply..."></textarea>
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => AddReply(post.Id)">Reply</button>
+                            </div>
+                        }
                     </div>
                 </div>
             }
         }
 
-        <div class="card shadow-sm p-3 mt-4">
-            <label class="form-label">Write a post</label>
-            <textarea class="form-control mb-2" @bind="_newPostText" rows="3"></textarea>
-            @if (!string.IsNullOrWhiteSpace(_errorMessage))
-            {
-                <div class="alert alert-danger">@_errorMessage</div>
-            }
-            <button class="btn btn-primary" @onclick="AddPost">Post</button>
-        </div>
+        @if (isReadOnlyThread)
+        {
+            <div class="alert alert-info mt-4">Auditor access to private threads is read-only.</div>
+        }
+        else
+        {
+            <div class="card shadow-sm p-3 mt-4">
+                <label class="form-label">Write a post</label>
+                <textarea class="form-control mb-2" @bind="_newPostText" rows="3"></textarea>
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <div class="alert alert-danger">@_errorMessage</div>
+                }
+                <button class="btn btn-primary" @onclick="AddPost">Post</button>
+            </div>
+        }
     </div>
 }
 
@@ -163,12 +175,11 @@ else
 
     private async Task TryJoinThread()
     {
-        if (_currentUser is null || _thread is null)
+        if (_currentUser is null || _thread is null || (_currentUser.IsAuditUser && _thread.IsPrivate))
             return;
 
         if (ThreadService.TryJoinPrivateThread(_thread.Id, _enteredCode, _currentUser))
         {
-            await SessionService.SetCurrentUserAsync(_currentUser);
             NavigationManager.NavigateTo($"/threads/{_thread.Id}", forceLoad: true);
         }
         else
@@ -179,7 +190,7 @@ else
 
     private void UpdateUnreadToZero()
     {
-        if (_currentUser is null || _thread is null)
+        if (_currentUser is null || _thread is null || (_currentUser.IsAuditUser && _thread.IsPrivate))
             return;
 
         if (_currentUser.JoinedThreadIds.Contains(_thread.Id))
@@ -188,7 +199,7 @@ else
 
     private async Task AddPost()
     {
-        if (_currentUser is null || _thread is null)
+        if (_currentUser is null || _thread is null || (_currentUser.IsAuditUser && _thread.IsPrivate))
             return;
 
         if (string.IsNullOrWhiteSpace(_newPostText))
@@ -231,7 +242,7 @@ else
 
     private async Task AddReply(int postId)
     {
-        if (_currentUser is null || _thread is null)
+        if (_currentUser is null || _thread is null || (_currentUser.IsAuditUser && _thread.IsPrivate))
             return;
 
         if (!_replyTextByPost.TryGetValue(postId, out var text) || string.IsNullOrWhiteSpace(text))

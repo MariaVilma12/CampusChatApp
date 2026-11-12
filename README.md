@@ -1,89 +1,46 @@
 # CampusChatApp
 
-## Project Overview
+CampusChatApp is a Blazor Web App for a campus community. It supports public and private discussion threads, posts and replies, direct messaging, editable demo profiles, unread counters, and a read-only community auditor.
 
-CampusChatApp is a Blazor Web App developed as part of **Arbeidskrav 2**. The application provides a simple campus discussion platform where users can sign in, participate in discussion threads, reply to posts, communicate through direct messages, and manage their profiles.
+## Demo profiles and data
 
-The application is built using **ASP.NET Core Blazor Interactive Server** and stores all data in memory in a lightweight application store. No database is required.
+Choose one of the supplied profiles on the sign-in page. The profile chooser is for demonstrations only; it is not authentication, and anyone using the app can select any profile. Do not enter real or sensitive information.
 
+Profiles, threads, memberships, posts, chats, messages, and unread counts are held in memory and reset when the application restarts. The app starts with demo profiles and three campus threads: **General**, **Backend C# & .NET**, and the private **Exam Prep Study Group**. Posts and direct conversations start empty.
 
----
+The auditor profile can read private threads and review all direct conversations. Auditor access is read-only for private-thread posts and direct messages.
 
-
-## Features
-
-- User sign in
-- User profile management
-- Public and private discussion threads
-- Create and reply to posts
-- Direct messaging between users
-- Unread message and thread counters
-- Auditor account with access to all discussions and chats
-
----
+The private demo thread uses invite code `secret123`. It is only a disposable classroom example, not a real secret.
 
 ## Requirements
 
-To run this project, you need:
-
 - .NET 10 SDK (or the version required by the course)
 - JetBrains Rider or Visual Studio
-- A modern web browser (Microsoft Edge or Google Chrome)
+- A modern web browser
 
-No database installation is required because the application uses an in-memory application store.
+No database server is required.
 
----
+## Run
 
-## How to Run
+1. Open `CampusChatApp.sln` in Rider or Visual Studio.
+2. Restore NuGet packages.
+3. Run the `CampusChatApp` project.
+4. Choose a demo profile when prompted.
 
-1. Clone or download the repository.
-2. Open the solution in JetBrains Rider or Visual Studio.
-3. Restore the NuGet packages if prompted.
-4. Build the solution.
-5. Run the project.
-6. Open the application in your browser if it does not open automatically.
+The app is typically available at `http://localhost:5200`.
 
-The application will usually be available at:
+## Test
 
-`http://localhost:5200`
+Run the test suite with:
 
----
+```powershell
+dotnet test CampusChatApp.sln
+```
 
-## Current Status
+## Technologies
 
-The project is currently under development.
-
-Implemented features include:
-
-- Project structure
-- Domain models
-- In-memory application data
-- Application services
-- Dependency Injection
-
-The following features are still in progress:
-
-- Sign in page
-- User profiles
-- Discussion threads
-- Posting and replies
-- Direct messaging
-- Unread notifications
-- Auditor functionality
-- Final documentation
-
----
-
-## Technologies Used
-
-- ASP.NET Core Blazor
-- C#
-- .NET 10
-- Dependency Injection
+- ASP.NET Core Blazor Interactive Server
+- C# and .NET 10
 - Bootstrap
-
----
-
-## Author
 
 Developed as part of the **Arbeidskrav 2** coursework.

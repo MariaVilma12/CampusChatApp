@@ -9,69 +9,94 @@
 
 <PageTitle>Profile</PageTitle>
 
-@if (_user is null)
+@if (Id > 0 || _user is not null)
 {
-    <div class="container py-4">
-        <div class="alert alert-danger">User not found.</div>
-    </div>
+    if (_user is null)
+    {
+        <div class="container py-4">
+            <div class="alert alert-danger">User not found.</div>
+        </div>
+    }
+    else
+    {
+        <div class="container py-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <p class="text-uppercase text-primary small fw-semibold mb-1">Profile</p>
+                    <h1 class="h3 mb-0">@_user.DisplayName</h1>
+                </div>
+                <div class="d-flex gap-2">
+                    @if (_isOwnProfile)
+                    {
+                        <button class="btn btn-primary" @onclick="NavigateToEditProfile">Edit profile</button>
+                    }
+                    @if (_isSignedIn)
+                    {
+                        <button class="btn btn-outline-danger" @onclick="SignOutCurrentProfile">Sign out</button>
+                    }
+                    else
+                    {
+                        <a class="btn btn-outline-primary" href="/signin">Sign in</a>
+                    }
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="rounded-circle me-3" style="width: 56px; height: 56px; background: @_user.AvatarColor; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">@_user.DisplayName.Substring(0, 1).ToUpper()</div>
+                        <div>
+                            <div class="fw-bold fs-5">@_user.DisplayName</div>
+                            <small class="text-muted">
+                                @_user.CourseStudying
+                                @if (_user.StudyYear.HasValue)
+                                {
+                                    <span> · Year @_user.StudyYear</span>
+                                }
+                            </small>
+                            @if (_user.IsAuditUser)
+                            {
+                                <div class="mt-2 badge bg-danger-subtle text-danger rounded-pill">Audit role</div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="bg-light rounded-3 p-3 h-100">
+                                <div class="text-muted small mb-1">About</div>
+                                <div>@_user.About</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-light rounded-3 p-3 h-100">
+                                <div class="text-muted small mb-1">Study information</div>
+                                <div><strong>Course:</strong> @_user.CourseStudying</div>
+                                <div><strong>Year:</strong> @(_user.StudyYear?.ToString() ?? "Not specified")</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <strong>Joined threads:</strong>
+                        @if (_user.JoinedThreadIds.Count == 0)
+                        {
+                            <span class="text-muted"> No joined threads yet</span>
+                        }
+                        else
+                        {
+                            <span>@string.Join(", ", _user.JoinedThreadIds)</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }
 else
 {
     <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <p class="text-uppercase text-primary small fw-semibold mb-1">Profile</p>
-                <h1 class="h3 mb-0">@_user.DisplayName</h1>
-            </div>
-            @if (_isOwnProfile)
-            {
-                <button class="btn btn-primary" @onclick="NavigateToEditProfile">Edit profile</button>
-            }
-        </div>
-
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 p-md-5">
-                <div class="d-flex align-items-center mb-4">
-                    <div class="rounded-circle me-3" style="width: 56px; height: 56px; background: @_user.AvatarColor; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">@_user.DisplayName.Substring(0, 1).ToUpper()</div>
-                    <div>
-                        <div class="fw-bold fs-5">@_user.DisplayName</div>
-                        <small class="text-muted">@_user.CourseStudying · Year @_user.StudyYear</small>
-                        @if (_user.IsAuditUser)
-                        {
-                            <div class="mt-2 badge bg-danger-subtle text-danger rounded-pill">Audit role</div>
-                        }
-                    </div>
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="bg-light rounded-3 p-3 h-100">
-                            <div class="text-muted small mb-1">About</div>
-                            <div>@_user.About</div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="bg-light rounded-3 p-3 h-100">
-                            <div class="text-muted small mb-1">Study information</div>
-                            <div><strong>Course:</strong> @_user.CourseStudying</div>
-                            <div><strong>Year:</strong> @_user.StudyYear</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <strong>Joined threads:</strong>
-                    @if (_user.JoinedThreadIds.Count == 0)
-                    {
-                        <span class="text-muted"> No joined threads yet</span>
-                    }
-                    else
-                    {
-                        <span>@string.Join(", ", _user.JoinedThreadIds)</span>
-                    }
-                </div>
-            </div>
-        </div>
+        <div class="alert alert-warning">Please sign in to view your profile.</div>
     </div>
 }
 
@@ -79,12 +104,30 @@ else
     [Parameter]
     public int Id { get; set; }
 
-private User? _user;
-private bool _isOwnProfile;
+    private User? _user;
+    private bool _isOwnProfile;
+    private bool _isSignedIn;
+    private bool _interactive;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (_interactive)
+            await LoadProfile();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _interactive = true;
+        await LoadProfile();
+        StateHasChanged();
+    }
+
+    private async Task LoadProfile()
+    {
         var currentUser = await SessionService.GetCurrentUserAsync();
+        _isSignedIn = currentUser is not null;
 
         if (Id > 0)
         {
@@ -93,8 +136,22 @@ private bool _isOwnProfile;
             return;
         }
 
-        _user = currentUser ?? UserService.GetUser(1);
-        _isOwnProfile = currentUser is not null && _user is not null;
+        if (currentUser is not null)
+        {
+            _user = currentUser;
+            _isOwnProfile = true;
+            return;
+        }
+
+        _user = null;
+        _isOwnProfile = false;
+    }
+
+    private async Task SignOutCurrentProfile()
+    {
+        await SessionService.LogoutAsync();
+        _isSignedIn = false;
+        Navigation.NavigateTo("/");
     }
 
     private void NavigateToEditProfile()

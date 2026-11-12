@@ -1,63 +1,55 @@
 @page "/signin"
-@using CampusChatApp.Models
 @using CampusChatApp.Services
-@inject UserService UserService
 @inject SessionService SessionService
+@inject UserService UserService
 @inject NavigationManager Navigation
 
-<PageTitle>Sign In</PageTitle>
+<PageTitle>Choose a profile</PageTitle>
 
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-md-9 col-lg-7">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body p-4 p-md-5">
-                    <div class="mb-4 text-center">
+                    <div class="text-center mb-4">
                         <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill mb-3">Campus Chat</span>
-                        <h1 class="h3 mb-2">Choose your campus identity</h1>
-                        <p class="text-muted mb-0">Sign in as a student, lecturer, or auditor to continue.</p>
+                        <h1 class="h3">Choose your profile</h1>
+                        <p class="text-muted mb-0">Select a demo profile to enter the campus community.</p>
                     </div>
 
-                    @if (_users == null)
+                    @if (!string.IsNullOrEmpty(_error))
                     {
-                        <div class="text-center text-muted">Loading profiles...</div>
-                    }
-                    else if (_users.Count == 0)
-                    {
-                        <div class="alert alert-info rounded-3">
-                            No campus profiles have been created yet. Create the first profile to get started.
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="row g-3 mb-4">
-                            @foreach (var user in _users)
-                            {
-                                <div class="col-md-6">
-                                    <button class="btn btn-light border text-start w-100 h-100 px-3 py-3 rounded-3" @onclick="() => SignInUser(user)">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: @user.AvatarColor; font-weight: 700;">
-                                                @user.DisplayName.Substring(0, 1).ToUpper()
-                                            </div>
-                                            <div>
-                                                <div class="fw-semibold">@user.DisplayName</div>
-                                                <small class="text-muted">
-                                                    @(user.IsAuditUser ? "Auditor" : (user.CourseStudying == "Software Architecture" ? "Lecturer" : "Student"))
-                                                </small>
-                                            </div>
-                                        </div>
-                                        <div class="mt-3 small text-muted">@user.CourseStudying</div>
-                                        <div class="mt-2 text-primary fw-semibold">Sign in</div>
-                                    </button>
-                                </div>
-                            }
-                        </div>
+                        <div class="alert alert-danger" role="alert">@_error</div>
                     }
 
-                    <div class="d-grid gap-2 mt-4">
-                        <a class="btn btn-primary" href="/profile/create">Create a profile</a>
-                        <a class="btn btn-outline-secondary" href="/profile/edit">Edit profile</a>
+                    <div class="list-group">
+                        @foreach (var user in UserService.GetAllUsers().OrderBy(user => user.DisplayName))
+                        {
+                            <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3"
+                                    @onclick="() => SelectProfile(user.Id)">
+                                <span class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                      style="width: 48px; height: 48px; background: @user.AvatarColor;">
+                                    @user.DisplayName.Substring(0, 1).ToUpperInvariant()
+                                </span>
+                                <span class="text-start flex-grow-1">
+                                    <strong class="d-block">@user.DisplayName</strong>
+                                    <small class="text-muted">@user.CourseStudying</small>
+                                </span>
+                                @if (user.IsAuditUser)
+                                {
+                                    <span class="badge text-bg-warning">Read-only auditor</span>
+                                }
+                                else if (user.StudyYear.HasValue)
+                                {
+                                    <span class="badge bg-primary-subtle text-primary">Year @user.StudyYear</span>
+                                }
+                            </button>
+                        }
                     </div>
+
+                    <p class="small text-muted text-center mt-4 mb-0">
+                        Demo profiles are provided for this in-memory application. Do not use real or sensitive information.
+                    </p>
                 </div>
             </div>
         </div>
@@ -65,29 +57,19 @@
 </div>
 
 @code {
-    private IReadOnlyList<User>? _users;
+    private string _error = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-            return;
-
-        _users = UserService.GetAllUsers();
-        var currentUser = await SessionService.GetCurrentUserAsync();
-        if (currentUser is not null)
-        {
+        if (firstRender && await SessionService.GetCurrentUserAsync() is not null)
             Navigation.NavigateTo("/home");
-        }
-        else
-        {
-            StateHasChanged();
-        }
     }
 
-    private async Task SignInUser(User user)
+    private async Task SelectProfile(int userId)
     {
-        await SessionService.SetCurrentUserAsync(user);
-        Navigation.NavigateTo("/home");
+        if (await SessionService.SelectProfileAsync(userId))
+            Navigation.NavigateTo("/home");
+        else
+            _error = "That profile is no longer available. Refresh and choose another profile.";
     }
 }
-

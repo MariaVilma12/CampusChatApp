@@ -34,9 +34,18 @@ else
 {
     var otherUserId = _chat.User1Id == _currentUser.Id ? _chat.User2Id : _chat.User1Id;
     var otherUser = UserService.GetUser(otherUserId);
+    var firstUser = UserService.GetUser(_chat.User1Id);
+    var secondUser = UserService.GetUser(_chat.User2Id);
 
     <div class="container py-4">
-        <h1>Chat with @((otherUser?.DisplayName ?? "Unknown"))</h1>
+        @if (_currentUser.IsAuditUser)
+        {
+            <h1>Conversation: @(firstUser?.DisplayName ?? "Unknown") and @(secondUser?.DisplayName ?? "Unknown")</h1>
+        }
+        else
+        {
+            <h1>Chat with @((otherUser?.DisplayName ?? "Unknown"))</h1>
+        }
         <div class="card shadow-sm p-3 mb-3">
             @if (!_chat.Messages.Any())
             {
@@ -46,11 +55,18 @@ else
             {
                 foreach (var message in _chat.Messages)
                 {
-                    <ChatMessage Message="message" />
+                    <ChatMessage Message="message" CurrentUserId="_currentUser.Id" />
                 }
             }
         </div>
-        <ChatInput ChatId="Id" />
+        @if (_currentUser.IsAuditUser)
+        {
+            <div class="alert alert-info">Auditor access to direct messages is read-only.</div>
+        }
+        else
+        {
+            <ChatInput ChatId="Id" />
+        }
     </div>
 }
 
@@ -61,12 +77,18 @@ else
     private User? _currentUser;
     private DirectChat? _chat;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
-        _currentUser = await SessionService.GetCurrentUserAsync();
         _chat = ChatService.GetChat(Id);
+        CampusChatStateService.DataChanged -= HandleDataChanged;
         CampusChatStateService.DataChanged += HandleDataChanged;
-        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _currentUser = await SessionService.GetCurrentUserAsync();
+        StateHasChanged();
     }
 
     private async void HandleDataChanged()

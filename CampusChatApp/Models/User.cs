@@ -10,9 +10,9 @@ public class User
 
     public string CourseStudying { get; set; } = string.Empty;
 
-    public int StudyYear { get; set; }
+    public int? StudyYear { get; set; }
 
-    public string AvatarColor { get; set; } = "#4f46e5";
+    public string AvatarColor { get; set; } = "#0f766e";
 
     // True only for the Auditor account
     public bool IsAuditUser { get; set; }

@@ -14,7 +14,21 @@
 else if (_currentUser is null)
 {
     <div class="container py-4">
-        <div class="alert alert-warning">Please sign in to view your campus home.</div>
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h1 class="h3 mb-3">Welcome to Campus Chat!</h1>
+            <p class="text-muted mb-4">
+                Your campus hub to connect with fellow students, join course threads, and collaborate seamlessly across the college community.
+            </p>
+            <p class="mb-4">
+                Explore discussions, find study groups, or reach out to peers directly.
+            </p>
+
+            <div class="d-flex flex-wrap gap-3">
+                <a class="btn btn-primary" href="/threads">Browse threads</a>
+                <a class="btn btn-outline-primary" href="/chats">Messages</a>
+                <a class="btn btn-outline-secondary" href="/profile">Profile</a>
+            </div>
+        </div>
     </div>
 }
 else
@@ -83,29 +97,17 @@ else
                                 <small class="text-muted">@_currentUser.CourseStudying</small>
                             </div>
                         </div>
-                        <div class="small text-muted">Year @_currentUser.StudyYear</div>
+                        @if (_currentUser.StudyYear.HasValue)
+                        {
+                            <div class="small text-muted">Year @_currentUser.StudyYear</div>
+                        }
+                        else if (_currentUser.IsAuditUser)
+                        {
+                            <div class="small text-muted">Campus reviewer</div>
+                        }
                         @if (_currentUser.IsAuditUser)
                         {
                             <div class="mt-3 badge bg-danger-subtle text-danger rounded-pill">Audit role active</div>
-                        }
-                    </div>
-                </div>
-
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-body p-4">
-                        <h2 class="h5 mb-3">Recent threads</h2>
-                        @if (!recentThreads.Any())
-                        {
-                            <div class="alert alert-info rounded-3 mb-0">No threads have been created yet.</div>
-                        }
-                        else
-                        {
-                            <div class="d-grid gap-2">
-                                @foreach (var thread in recentThreads)
-                                {
-                                    <a href="/threads/@thread.Id" class="text-decoration-none text-body rounded-3 border p-2">@thread.Name</a>
-                                }
-                            </div>
                         }
                     </div>
                 </div>

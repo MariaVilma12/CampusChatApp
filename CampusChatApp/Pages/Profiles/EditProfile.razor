@@ -54,10 +54,6 @@ else
                                     <div class="small text-muted">Your selected colour updates your profile badge.</div>
                                 </div>
                             </div>
-                            <div class="mt-3 form-check">
-                                <InputCheckbox class="form-check-input" @bind-Value="_isAuditUser" />
-                                <label class="form-check-label">Audit role (can read all threads and direct chats)</label>
-                            </div>
                             <button type="submit" class="btn btn-primary mt-4">Save changes</button>
                         </EditForm>
                     </div>
@@ -72,27 +68,31 @@ else
     private string _displayName = string.Empty;
     private string _about = string.Empty;
     private string _courseStudying = string.Empty;
-    private int _studyYear;
-    private string _avatarColor = "#4f46e5";
-    private bool _isAuditUser;
+    private int? _studyYear;
+    private string _avatarColor = "#0f766e";
     private string _statusMessage = string.Empty;
     private bool _isError;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender)
+            return;
         _currentUser = await SessionService.GetCurrentUserAsync();
         if (_currentUser is null)
+        {
+            StateHasChanged();
             return;
+        }
 
         _displayName = _currentUser.DisplayName;
         _about = _currentUser.About;
         _courseStudying = _currentUser.CourseStudying;
         _studyYear = _currentUser.StudyYear;
         _avatarColor = _currentUser.AvatarColor;
-        _isAuditUser = _currentUser.IsAuditUser;
+        StateHasChanged();
     }
 
-    private async Task SaveProfile()
+    private void SaveProfile()
     {
         if (_currentUser is null)
         {
@@ -103,11 +103,9 @@ else
 
         try
         {
-            UserService.UpdateProfile(_currentUser, _displayName, _about, _courseStudying, _studyYear, _avatarColor, _isAuditUser);
-            await SessionService.SetCurrentUserAsync(_currentUser);
+            UserService.UpdateProfile(_currentUser, _displayName, _about, _courseStudying, _studyYear, _avatarColor);
             _statusMessage = "Profile updated successfully.";
             _isError = false;
-            await Task.Delay(200);
             Navigation.NavigateTo("/profile");
         }
         catch (Exception ex)

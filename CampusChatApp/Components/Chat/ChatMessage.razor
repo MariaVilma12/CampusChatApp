@@ -1,12 +1,17 @@
 @namespace CampusChatApp.Components.Chat
 @using ChatMessageModel = CampusChatApp.Models.ChatMessage
 
-<div class="mb-3">
-    <div class="small text-muted">@Message.SenderName</div>
-    <div class="p-2 rounded bg-light">@Message.Text</div>
+<div class="d-flex mb-2 @(Message.SenderId == CurrentUserId ? "justify-content-end" : "justify-content-start")">
+    <div class="chat-message-bubble @(Message.SenderId == CurrentUserId ? "chat-message-own" : "chat-message-other")">
+        <div class="small fw-semibold mb-1">@Message.SenderName</div>
+        <div>@Message.Text</div>
+    </div>
 </div>
 
 @code {
     [Parameter]
     public ChatMessageModel Message { get; set; } = new();
+
+    [Parameter]
+    public int CurrentUserId { get; set; }
 }

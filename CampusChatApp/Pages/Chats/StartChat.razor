@@ -16,6 +16,13 @@
     {
         <div class="alert alert-warning">Please sign in to start a chat.</div>
     }
+    else if (_currentUser.IsAuditUser)
+    {
+        <div class="alert alert-info">
+            Auditor profiles can review existing conversations but cannot start direct messages.
+            <a class="alert-link" href="/audit">Review conversations</a>
+        </div>
+    }
     else
     {
         <div class="card shadow-sm p-3">
@@ -59,14 +66,16 @@
     private User? _currentUser;
     private string _searchText = string.Empty;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
         _currentUser = await SessionService.GetCurrentUserAsync();
+        StateHasChanged();
     }
 
     private void CreateChat(User recipient)
     {
-        if (_currentUser is null)
+        if (_currentUser is null || _currentUser.IsAuditUser)
             return;
 
         var existing = ChatService.GetAllChats()

@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@using CampusChatApp.Services
+@inject SessionService SessionService
 
 <div class="page campus-shell">
     <aside class="sidebar">
@@ -24,3 +26,18 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private CampusChatApp.Models.User? _currentUser;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var user = await SessionService.GetCurrentUserAsync();
+
+        if (_currentUser != user)
+        {
+            _currentUser = user;
+            StateHasChanged();
+        }
+    }
+}

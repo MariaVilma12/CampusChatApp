@@ -37,17 +37,19 @@
 
 @code {
     private User? _currentUser;
-    private int _threadId;
+    private int? _threadId;
     private string _code = string.Empty;
     private string _message = string.Empty;
     private bool _isSuccess;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
         _currentUser = await SessionService.GetCurrentUserAsync();
+        StateHasChanged();
     }
 
-    private async Task JoinThread()
+    private void JoinThread()
     {
         if (_currentUser is null)
         {
@@ -56,7 +58,15 @@
             return;
         }
 
-        var thread = ThreadService.GetThread(_threadId);
+        if (_threadId is null or <= 0)
+        {
+            _message = "Enter a valid thread ID.";
+            _isSuccess = false;
+            return;
+        }
+
+        var threadId = _threadId.Value;
+        var thread = ThreadService.GetThread(threadId);
         if (thread is null)
         {
             _message = "Thread not found.";
@@ -71,12 +81,11 @@
             return;
         }
 
-        if (!_currentUser.JoinedThreadIds.Contains(_threadId))
-            _currentUser.JoinedThreadIds.Add(_threadId);
+        if (!_currentUser.JoinedThreadIds.Contains(threadId))
+            _currentUser.JoinedThreadIds.Add(threadId);
 
         _message = $"You joined '{thread.Name}'.";
         _isSuccess = true;
-        await Task.Delay(300);
-        Navigation.NavigateTo($"/threads/{_threadId}");
+        Navigation.NavigateTo($"/threads/{threadId}");
     }
 }

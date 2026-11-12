@@ -1,0 +1,83 @@
+@page "/audit"
+@layout MainLayout
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@implements IDisposable
+@inject SessionService SessionService
+@inject ChatService ChatService
+@inject UserService UserService
+@inject CampusChatStateService CampusChatStateService
+
+<PageTitle>Conversation review</PageTitle>
+
+<div class="container py-4">
+    <h1 class="h3 mb-3">Conversation review</h1>
+
+    @if (_currentUser is null)
+    {
+        <div class="alert alert-warning">Choose the auditor profile to review conversations.</div>
+    }
+    else if (!_currentUser.IsAuditUser)
+    {
+        <div class="alert alert-danger">This page is available only to the community reviewer.</div>
+    }
+    else
+    {
+        var conversations = ChatService.GetAllChats()
+            .OrderByDescending(chat => chat.Messages.LastOrDefault()?.SentAt ?? DateTime.MinValue)
+            .ToList();
+
+        <p class="text-muted">Direct conversations are available here for read-only review.</p>
+
+        @if (conversations.Count == 0)
+        {
+            <div class="alert alert-info">No conversations are available to review.</div>
+        }
+        else
+        {
+            <div class="list-group">
+                @foreach (var chat in conversations)
+                {
+                    var firstUser = UserService.GetUser(chat.User1Id);
+                    var secondUser = UserService.GetUser(chat.User2Id);
+                    var lastMessage = chat.Messages.LastOrDefault();
+
+                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-3"
+                       href="@($"/chats/{chat.Id}")">
+                        <span class="text-truncate">
+                            <strong>@(firstUser?.DisplayName ?? "Unknown") and @(secondUser?.DisplayName ?? "Unknown")</strong>
+                            <span class="d-block small text-muted">@(lastMessage?.Text ?? "No messages yet")</span>
+                        </span>
+                        <span class="badge bg-primary-subtle text-primary">@chat.Messages.Count messages</span>
+                    </a>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private User? _currentUser;
+
+    protected override void OnInitialized()
+    {
+        CampusChatStateService.DataChanged += HandleDataChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _currentUser = await SessionService.GetCurrentUserAsync();
+        StateHasChanged();
+    }
+
+    private async void HandleDataChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        CampusChatStateService.DataChanged -= HandleDataChanged;
+    }
+}

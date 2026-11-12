@@ -10,28 +10,7 @@ public class UserService
 
     public User? GetUser(int id) => AppStore.Users.FirstOrDefault(u => u.Id == id);
 
-    public static User CreateProfile(string displayName, string about, string courseStudying, int studyYear, string avatarColor = "#4f46e5", bool isAuditUser = false)
-    {
-        var profile = ValidateAndNormalizeProfile(displayName, about, courseStudying, studyYear, avatarColor);
-
-        var user = new User
-        {
-            Id = GetNextUserId(),
-            DisplayName = profile.displayName,
-            About = profile.about,
-            CourseStudying = profile.courseStudying,
-            StudyYear = profile.studyYear,
-            AvatarColor = profile.avatarColor,
-            IsAuditUser = isAuditUser,
-            JoinedThreadIds = new List<int>(),
-            UnreadThreadCounts = new Dictionary<int, int>()
-        };
-
-        AppStore.Users.Add(user);
-        return user;
-    }
-
-    public static User UpdateProfile(User user, string displayName, string about, string courseStudying, int studyYear, string avatarColor = "#4f46e5", bool? isAuditUser = null)
+    public User UpdateProfile(User user, string displayName, string about, string courseStudying, int? studyYear, string avatarColor)
     {
         ArgumentNullException.ThrowIfNull(user);
 
@@ -42,20 +21,14 @@ public class UserService
         user.CourseStudying = profile.courseStudying;
         user.StudyYear = profile.studyYear;
         user.AvatarColor = profile.avatarColor;
-
-        if (isAuditUser.HasValue)
-            user.IsAuditUser = isAuditUser.Value;
-
         return user;
     }
 
-    private static int GetNextUserId() => AppStore.Users.Count == 0 ? 1 : AppStore.Users.Max(u => u.Id) + 1;
-
-    private static (string displayName, string about, string courseStudying, int studyYear, string avatarColor) ValidateAndNormalizeProfile(
+    private static (string displayName, string about, string courseStudying, int? studyYear, string avatarColor) ValidateAndNormalizeProfile(
         string? displayName,
         string? about,
         string? courseStudying,
-        int studyYear,
+        int? studyYear,
         string? avatarColor)
     {
         var normalizedName = (displayName ?? string.Empty).Trim();
@@ -65,15 +38,18 @@ public class UserService
         if (normalizedName.Length > Constants.MaxDisplayNameLength)
             throw new ArgumentException($"Display name must be {Constants.MaxDisplayNameLength} characters or fewer.", nameof(displayName));
 
-        var safeColor = string.IsNullOrWhiteSpace(avatarColor)
-            ? "#4f46e5"
-            : avatarColor.Trim();
+        if (studyYear.HasValue && (studyYear.Value < 1 || studyYear.Value > 5))
+            throw new ArgumentException("Study year must be between 1 and 5.", nameof(studyYear));
+
+        if (string.IsNullOrWhiteSpace(avatarColor) ||
+            !System.Text.RegularExpressions.Regex.IsMatch(avatarColor, "^#[0-9a-fA-F]{6}$"))
+            throw new ArgumentException("Choose a valid avatar colour.", nameof(avatarColor));
 
         return (
             normalizedName,
             about?.Trim() ?? string.Empty,
             courseStudying?.Trim() ?? string.Empty,
             studyYear,
-            safeColor);
+            avatarColor.Trim());
     }
 }
