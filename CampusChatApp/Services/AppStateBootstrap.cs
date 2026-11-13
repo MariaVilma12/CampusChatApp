@@ -25,9 +25,9 @@ public static class AppStateBootstrap
                 {
                     Id = 2,
                     DisplayName = "Milo Jensen",
-                    About = "Interested in cloud platforms, data, and team projects.",
+                    Role = UserRole.Lecturer,
+                    About = "Lecturer interested in cloud platforms, data, and team projects.",
                     CourseStudying = "Information Technology",
-                    StudyYear = 3,
                     AvatarColor = "#c2410c"
                 },
                 new User
@@ -43,6 +43,7 @@ public static class AppStateBootstrap
                 {
                     Id = 4,
                     DisplayName = "Community Reviewer",
+                    Role = UserRole.Auditor,
                     About = "Read-only access for campus community review.",
                     CourseStudying = "Campus Services",
                     IsAuditUser = true,

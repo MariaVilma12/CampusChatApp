@@ -1,10 +1,19 @@
 namespace CampusChatApp.Models;
 
+public enum UserRole
+{
+    Student,
+    Lecturer,
+    Auditor
+}
+
 public class User
 {
     public int Id { get; set; }
 
     public string DisplayName { get; set; } = string.Empty;
+
+    public UserRole Role { get; set; } = UserRole.Student;
 
     public string About { get; set; } = string.Empty;
 

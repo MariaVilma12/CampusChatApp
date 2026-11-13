@@ -3,8 +3,8 @@
     background: rgba(15, 64, 59, 0.24);
 }
 
-.navbar-brand {
-    color: white;
+.sidebar-header .navbar-brand {
+    color: #FFFFFF;
     font-size: 1.1rem;
     font-weight: 700;
     text-decoration: none;

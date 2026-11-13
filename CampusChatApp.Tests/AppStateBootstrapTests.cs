@@ -1,4 +1,5 @@
 using CampusChatApp.Data;
+using CampusChatApp.Models;
 using CampusChatApp.Services;
 using Xunit;
 
@@ -20,9 +21,11 @@ public sealed class AppStateBootstrapTests : IDisposable
 
         Assert.Equal(4, AppStore.Users.Count);
         Assert.Contains(AppStore.Users, user => user.DisplayName == "Avery Patel");
-        Assert.Contains(AppStore.Users, user => user.DisplayName == "Milo Jensen");
+        var lecturer = Assert.Single(AppStore.Users, user => user.DisplayName == "Milo Jensen");
+        Assert.Equal(UserRole.Lecturer, lecturer.Role);
         Assert.Contains(AppStore.Users, user => user.DisplayName == "Nia Okafor");
         Assert.Single(AppStore.Users, user => user.IsAuditUser);
+        Assert.Contains(AppStore.Users, user => user.IsAuditUser && user.Role == UserRole.Auditor);
         Assert.Equal(
             ["General", "Backend C# & .NET", "Exam Prep Study Group🔒"],
             AppStore.Threads.Select(thread => thread.Name));

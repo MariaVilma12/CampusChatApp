@@ -4,7 +4,7 @@ CampusChatApp is a Blazor Web App for a campus community. It supports public and
 
 ## Demo profiles and data
 
-Choose one of the supplied profiles on the sign-in page. The profile chooser is for demonstrations only; it is not authentication, and anyone using the app can select any profile. Do not enter real or sensitive information.
+Choose one of the supplied profiles on the sign-in page. Demo profiles include students, lecturer Milo Jensen, and a read-only community auditor. The profile chooser is for demonstrations only; it is not authentication, and anyone using the app can select any profile. Do not enter real or sensitive information.
 
 Profiles, threads, memberships, posts, chats, messages, and unread counts are held in memory and reset when the application restarts. The app starts with demo profiles and three campus threads: **General**, **Backend C# & .NET**, and the private **Exam Prep Study Group**. Posts and direct conversations start empty.
 
