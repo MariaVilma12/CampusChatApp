@@ -1,19 +1,29 @@
-# Safety Considerations
+# Safety note
 
-## Demo identity and access
+**1. Personal data**
 
-The sign-in screen selects a preloaded demo profile; it does not verify a real identity. Anyone who can reach the app can choose any profile, including the auditor profile. The auditor view and private-thread checks are classroom-demo behavior, not a security boundary.
+The app holds profile details, posts, replies, direct messages, thread memberships, and unread post IDs. It does not record when a user joined or last read a thread. Do not enter real personal or sensitive data.
 
-Do not expose this app to untrusted networks or use real personal, confidential, or sensitive information.
+**2. Chat retention**
 
-## Data and private threads
+Chats exist only in server memory and disappear on restart. A possible future policy is deletion one year after the last message; this is not implemented.
 
-Profiles, threads, access codes, posts, chats, messages, memberships, and unread counts are stored in memory and disappear when the application restarts. The seeded private thread uses the public demo code `secret123`; it is kept in memory as plain text. Never reuse this code or enter real secrets.
+**3. A student leaves**
 
-## Input handling
+Profile deletion and post anonymisation are not implemented. A future option is to delete the profile and retain posts under “Former student”, subject to an agreed retention policy.
 
-The app validates required thread, post, reply, and message fields and enforces length limits. Blazor encodes displayed text by default. These checks improve application behavior but do not replace production-grade security controls.
+**4. Abuse**
 
-## Production requirements
+Authors can delete their own posts; there is no reporting, moderator removal, or evidence-preservation feature. A production system needs a reporting and review process that protects evidence.
 
-Before production use, replace profile selection with real authentication and server-side authorization, persist data with appropriate access controls, hash private-thread secrets, and add audit logging and abuse protections.
+**5. Direct chat privacy**
+
+The chat page checks whether a selected profile is a participant or the auditor. These are demo checks, not a security boundary: anyone can select any profile, including the seeded Community Reviewer. The app does not notify participants of auditor access, and messages are not encrypted in memory. Do not expose it to untrusted networks.
+
+**6. Logging**
+
+Message text and private-thread codes should not be logged. The application has no explicit policy enforcing this across framework and hosting logs; review logging configuration before deployment.
+
+**7. Private-thread codes**
+
+Codes are stored in plain text on the in-memory thread model; the seeded example is also in source code. There is no attempt limit. Never reuse the demo code or enter real secrets; a production system needs protected code storage, rate limiting, authentication, and server-side authorization.
