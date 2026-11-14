@@ -2,7 +2,9 @@
 @layout MainLayout
 @using CampusChatApp.Data
 @using CampusChatApp.Services
+@implements IDisposable
 @inject SessionService SessionService
+@inject CampusChatStateService CampusChatStateService
 @inject NavigationManager Navigation
 
 @if (_isChecking)
@@ -68,16 +70,13 @@ else
                                     var thread = AppStore.Threads.FirstOrDefault(t => t.Id == threadId);
                                     if (thread is not null)
                                     {
-                                        var unread = _currentUser.UnreadThreadCounts.TryGetValue(thread.Id, out var value) ? value : 0;
+                                        var unread = ThreadService.GetUnreadCount(_currentUser, thread.Id);
                                         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0" href="/threads/@thread.Id">
                                             <div>
                                                 <div class="fw-semibold">@thread.Name</div>
                                                 <small class="text-muted">@(thread.IsPrivate ? "Private thread" : "Public thread")</small>
                                             </div>
-                                            @if (unread > 0)
-                                            {
-                                                <span class="badge bg-warning text-dark rounded-pill">@unread</span>
-                                            }
+                                            <span class="badge bg-warning text-dark rounded-pill">@unread unread</span>
                                         </a>
                                     }
                                 }
@@ -143,6 +142,21 @@ else
 @code {
 private CampusChatApp.Models.User? _currentUser;
 private bool _isChecking = true;
+
+    protected override void OnInitialized()
+    {
+        CampusChatStateService.DataChanged += HandleDataChanged;
+    }
+
+    private async void HandleDataChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        CampusChatStateService.DataChanged -= HandleDataChanged;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

@@ -7,6 +7,8 @@ namespace CampusChatApp.Services;
 
 public class ThreadService
 {
+    private static readonly object UnreadLock = new();
+
     public static IReadOnlyList<ThreadModel> GetAllThreads() => AppStore.Threads;
 
     public static ThreadModel? GetThread(int id) => AppStore.Threads.FirstOrDefault(t => t.Id == id);
@@ -84,21 +86,32 @@ public class ThreadService
         if (!string.Equals(storedCode, enteredCode, StringComparison.OrdinalIgnoreCase))
             return false;
 
-        if (!user.JoinedThreadIds.Contains(threadId))
-            user.JoinedThreadIds.Add(threadId);
-
+        JoinThread(threadId, user);
         return true;
+    }
+
+    public static bool JoinThread(int threadId, User user)
+    {
+        lock (UnreadLock)
+        {
+            if (user.JoinedThreadIds.Contains(threadId))
+                return false;
+
+            user.JoinedThreadIds.Add(threadId);
+            return true;
+        }
     }
 
     public static bool LeaveThread(int threadId, User user)
     {
-        if (!user.JoinedThreadIds.Contains(threadId))
-            return false;
+        lock (UnreadLock)
+        {
+            if (!user.JoinedThreadIds.Remove(threadId))
+                return false;
 
-        user.JoinedThreadIds.Remove(threadId);
-       user.UnreadThreadCounts.Remove(threadId);
-
-        return true;
+            user.UnreadThreadPostIds.Remove(threadId);
+            return true;
+        }
     }
 
     public static void AddPost(int threadId, Post post)
@@ -111,8 +124,20 @@ public class ThreadService
         if (!CanPostToThread(thread, post.AuthorId))
             throw new InvalidOperationException("You do not have permission to post in this thread.");
 
-        thread.Posts.Add(post);
-        thread.LastUpdatedAt = DateTime.UtcNow;
+        lock (UnreadLock)
+        {
+            post.Id = thread.Posts.Count == 0 ? 1 : thread.Posts.Max(p => p.Id) + 1;
+            thread.Posts.Add(post);
+            thread.LastUpdatedAt = DateTime.UtcNow;
+
+            foreach (var user in AppStore.Users.Where(u => u.Id != post.AuthorId && u.JoinedThreadIds.Contains(threadId)))
+            {
+                if (!user.UnreadThreadPostIds.TryGetValue(threadId, out var unread))
+                    user.UnreadThreadPostIds[threadId] = unread = new HashSet<int>();
+
+                unread.Add(post.Id);
+            }
+        }
     }
 
     private static string? NormalizeAccessCode(string? code)
@@ -143,32 +168,41 @@ public class ThreadService
         if (thread is null)
             return false;
 
-        var post = thread.Posts.FirstOrDefault(p => p.Id == postId);
-        if (post is null)
-            return false;
+        lock (UnreadLock)
+        {
+            var post = thread.Posts.FirstOrDefault(p => p.Id == postId);
+            if (post is null || post.AuthorId != currentUser.Id)
+                return false;
 
-        if (post.AuthorId != currentUser.Id)
-            return false;
-
-        thread.Posts.Remove(post);
-        thread.LastUpdatedAt = DateTime.UtcNow;
+            thread.Posts.Remove(post);
+            foreach (var user in AppStore.Users)
+            {
+                if (user.UnreadThreadPostIds.TryGetValue(threadId, out var unread))
+                    unread.Remove(postId);
+            }
+            thread.LastUpdatedAt = DateTime.UtcNow;
+        }
         return true;
     }
 
-    public void MarkThreadAsOpened(User user, int threadId)
+    public static int GetUnreadCount(User user, int threadId)
     {
-        if (user.UnreadThreadCounts.ContainsKey(threadId))
-            user.UnreadThreadCounts[threadId] = 0;
+        lock (UnreadLock)
+        {
+            return user.JoinedThreadIds.Contains(threadId) &&
+                   user.UnreadThreadPostIds.TryGetValue(threadId, out var unread)
+                ? unread.Count
+                : 0;
+        }
     }
 
-    public void NotifyUnreadThread(User user, int threadId)
+    public static bool MarkThreadAsOpened(User user, int threadId)
     {
-        if (!user.JoinedThreadIds.Contains(threadId))
-            return;
-
-        user.UnreadThreadCounts.TryAdd(threadId, 0);
-
-        user.UnreadThreadCounts[threadId] += 1;
+        lock (UnreadLock)
+        {
+            return user.JoinedThreadIds.Contains(threadId) &&
+                   user.UnreadThreadPostIds.Remove(threadId);
+        }
     }
 
     private static bool CanPostToThread(ThreadModel thread, int authorId)

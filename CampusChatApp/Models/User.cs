@@ -29,6 +29,5 @@ public class User
     // Stores the IDs of threads the user has joined
     public List<int> JoinedThreadIds { get; set; } = new();
 
-    // Unread post counts per joined thread
-    public Dictionary<int, int> UnreadThreadCounts { get; set; } = new();
+    public Dictionary<int, HashSet<int>> UnreadThreadPostIds { get; set; } = new();
 }

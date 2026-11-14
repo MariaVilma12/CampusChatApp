@@ -3,8 +3,10 @@
 @using CampusChatApp.Data
 @using CampusChatApp.Models
 @using CampusChatApp.Services
+@implements IDisposable
 @inject SessionService SessionService
 @inject ThreadService ThreadService
+@inject CampusChatStateService CampusChatStateService
 @inject NavigationManager Navigation
 
 <PageTitle>Campus Threads</PageTitle>
@@ -46,7 +48,8 @@
             foreach (var thread in filteredThreads)
             {
                 var canViewThread = SessionService.CanAccessThread(thread, _currentUser);
-                var unreadCount = _currentUser.UnreadThreadCounts.TryGetValue(thread.Id, out var count) ? count : 0;
+                var isJoined = _currentUser.JoinedThreadIds.Contains(thread.Id);
+                var unreadCount = ThreadService.GetUnreadCount(_currentUser, thread.Id);
                 var latestPost = thread.Posts.OrderByDescending(p => p.CreatedAt).FirstOrDefault();
                 var latestAuthor = latestPost is not null ? (AppStore.Users.FirstOrDefault(u => u.Id == latestPost.AuthorId)?.DisplayName ?? latestPost.AuthorName) : "No posts yet";
 
@@ -72,11 +75,11 @@
                         </div>
                         <div class="text-end">
                             <span class="badge bg-primary me-2">@thread.Posts.Count</span>
-                            @if (unreadCount > 0)
+                            @if (isJoined)
                             {
                                 <span class="badge bg-warning text-dark rounded-pill">@unreadCount unread</span>
                             }
-                            @if (_currentUser.JoinedThreadIds.Contains(thread.Id))
+                            @if (isJoined)
                             {
                                 <button class="btn btn-sm btn-primary mt-2 me-2" @onclick="() => JoinThread(thread.Id)">Join</button>
                                 <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="() => LeaveThread(thread.Id)">Leave</button>
@@ -97,11 +100,26 @@
     private User? _currentUser;
     private string _searchText = string.Empty;
 
+    protected override void OnInitialized()
+    {
+        CampusChatStateService.DataChanged += HandleDataChanged;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
         _currentUser = await SessionService.GetCurrentUserAsync();
         StateHasChanged();
+    }
+
+    private async void HandleDataChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        CampusChatStateService.DataChanged -= HandleDataChanged;
     }
 
     private async Task JoinThread(int threadId)
@@ -115,8 +133,8 @@
 
         if (!thread.IsPrivate)
         {
-            if (!_currentUser.JoinedThreadIds.Contains(threadId))
-                _currentUser.JoinedThreadIds.Add(threadId);
+            if (ThreadService.JoinThread(threadId, _currentUser))
+                CampusChatStateService.NotifyChanged();
 
             await InvokeAsync(StateHasChanged);
             return;
@@ -130,7 +148,8 @@
         if (_currentUser is null)
             return;
 
-        ThreadService.LeaveThread(threadId, _currentUser);
+        if (ThreadService.LeaveThread(threadId, _currentUser))
+            CampusChatStateService.NotifyChanged();
         await InvokeAsync(StateHasChanged);
     }
 

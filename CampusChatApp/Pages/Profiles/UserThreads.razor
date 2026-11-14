@@ -1,8 +1,11 @@
 @page "/profiles/{id:int}/threads"
 @layout MainLayout
+@using CampusChatApp.Components.Threads
 @using CampusChatApp.Models
 @using CampusChatApp.Services
+@implements IDisposable
 @inject UserService UserService
+@inject CampusChatStateService CampusChatStateService
 
 <PageTitle>My Threads</PageTitle>
 
@@ -16,25 +19,7 @@ else
 {
     <div class="container py-4">
         <h1>@_user.DisplayName's Threads</h1>
-        @if (_user.JoinedThreadIds.Count == 0)
-        {
-            <div class="alert alert-info">This user has not joined any threads yet.</div>
-        }
-        else
-        {
-            <ul class="list-group">
-                @foreach (var threadId in _user.JoinedThreadIds)
-                {
-                    var thread = ThreadService.GetThread(threadId);
-                    if (thread is not null)
-                    {
-                        <li class="list-group-item">
-                            <a href="/threads/@thread.Id">@thread.Name</a>
-                        </li>
-                    }
-                }
-            </ul>
-        }
+        <JoinedThreads User="_user" />
     </div>
 }
 
@@ -42,12 +27,25 @@ else
     [Parameter]
     public int Id { get; set; }
 
-private User? _user;
-    [Inject]
-    public ThreadService ThreadService { get; set; } = null!;
+    private User? _user;
 
     protected override void OnInitialized()
     {
-    _user = UserService.GetUser(Id);
+        CampusChatStateService.DataChanged += HandleDataChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _user = UserService.GetUser(Id);
+    }
+
+    private async void HandleDataChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        CampusChatStateService.DataChanged -= HandleDataChanged;
     }
 }

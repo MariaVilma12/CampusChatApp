@@ -1,0 +1,38 @@
+@namespace CampusChatApp.Components.Threads
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject ThreadService ThreadService
+
+@{
+    var threads = User.JoinedThreadIds
+        .Distinct()
+        .Select(ThreadService.GetThread)
+        .Where(thread => thread is not null)
+        .OrderBy(thread => thread!.Name)
+        .ToList();
+}
+
+@if (threads.Count == 0)
+{
+    <p class="text-muted mb-0">No joined threads yet.</p>
+}
+else
+{
+    <ul class="list-group mt-2">
+        @foreach (var thread in threads)
+        {
+            <li class="list-group-item">
+                <a href="/threads/@thread!.Id">@thread.Name</a>
+                @if (thread.IsPrivate)
+                {
+                    <span class="badge bg-secondary ms-2">Private</span>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public User User { get; set; } = default!;
+}

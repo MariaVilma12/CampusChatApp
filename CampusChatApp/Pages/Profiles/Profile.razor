@@ -1,10 +1,13 @@
 @page "/profile"
 @page "/profiles/{id:int}"
 @layout MainLayout
+@using CampusChatApp.Components.Threads
 @using CampusChatApp.Models
 @using CampusChatApp.Services
+@implements IDisposable
 @inject UserService UserService
 @inject SessionService SessionService
+@inject CampusChatStateService CampusChatStateService
 @inject NavigationManager Navigation
 
 <PageTitle>Profile</PageTitle>
@@ -83,14 +86,7 @@
 
                     <div class="mt-4">
                         <strong>Joined threads:</strong>
-                        @if (_user.JoinedThreadIds.Count == 0)
-                        {
-                            <span class="text-muted"> No joined threads yet</span>
-                        }
-                        else
-                        {
-                            <span>@string.Join(", ", _user.JoinedThreadIds)</span>
-                        }
+                        <JoinedThreads User="_user" />
                     </div>
                 </div>
             </div>
@@ -112,6 +108,17 @@ else
     private bool _isOwnProfile;
     private bool _isSignedIn;
     private bool _interactive;
+
+    protected override void OnInitialized()
+    {
+        CampusChatStateService.DataChanged += HandleDataChanged;
+    }
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        Id = 0;
+        return base.SetParametersAsync(parameters);
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -161,5 +168,15 @@ else
     private void NavigateToEditProfile()
     {
         Navigation.NavigateTo("/profile/edit");
+    }
+
+    private async void HandleDataChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        CampusChatStateService.DataChanged -= HandleDataChanged;
     }
 }

@@ -5,6 +5,7 @@
 @using CampusChatApp.Services
 @inject SessionService SessionService
 @inject ThreadService ThreadService
+@inject CampusChatStateService CampusChatStateService
 @inject NavigationManager Navigation
 
 <PageTitle>Create Thread</PageTitle>
@@ -109,7 +110,8 @@
         };
 
         ThreadService.AddThread(newThread);
-        user.JoinedThreadIds.Add(newThread.Id);
+        ThreadService.JoinThread(newThread.Id, user);
+        CampusChatStateService.NotifyChanged();
         _message = $"Thread '{newThread.Name}' created successfully.";
         _isSuccess = true;
 

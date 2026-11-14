@@ -1,8 +1,6 @@
 @page "/"
 @page "/welcome"
 @layout MainLayout
-@using CampusChatApp.Services
-@inject NavigationManager Navigation
 
 <PageTitle>Welcome</PageTitle>
 
@@ -16,17 +14,11 @@
                     Connect with students, lecturers, and auditors in one welcoming campus space.
                 </p>
 
-                <button class="btn btn-primary btn-lg px-4" @onclick="GoToSignIn">
-                    Sign In
-                </button>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a class="btn btn-primary btn-lg px-4" href="/signin">Sign In</a>
+                    <a class="btn btn-outline-primary btn-lg px-4" href="/profile/create">Create profile</a>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-@code {
-    private void GoToSignIn()
-    {
-        Navigation.NavigateTo("/signin");
-    }
-}

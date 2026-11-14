@@ -4,13 +4,21 @@ CampusChatApp is a Blazor Web App for a campus community. It supports public and
 
 ## Demo profiles and data
 
-Choose one of the supplied profiles on the sign-in page. Demo profiles include students, lecturer Milo Jensen, and a read-only community auditor. The profile chooser is for demonstrations only; it is not authentication, and anyone using the app can select any profile. Do not enter real or sensitive information.
+Choose one of the supplied profiles on the sign-in page, or create a student demo profile from the welcome page. Demo profiles include students, lecturer Milo Jensen, and a read-only community auditor. The profile chooser is for demonstrations only; it is not authentication, and anyone using the app can select any profile. Do not enter real or sensitive information.
 
 Profiles, threads, memberships, posts, chats, messages, and unread counts are held in memory and reset when the application restarts. The app starts with demo profiles and three campus threads: **General**, **Backend C# & .NET**, and the private **Exam Prep Study Group**. Posts and direct conversations start empty.
 
 The auditor profile can read private threads and review all direct conversations. Auditor access is read-only for private-thread posts and direct messages.
 
 The private demo thread uses invite code `secret123`. It is only a disposable classroom example, not a real secret.
+
+Use **People** in the navigation to search for another profile and see its joined
+threads. Private thread names and memberships are visible on profiles, as they
+are in the thread list; viewing their posts still requires access to the thread.
+
+The home and thread-list pages show unread post counts for joined threads,
+including zero. Opening a thread clears its count; new posts from other profiles
+increase it until they are read. Replies are not counted as posts.
 
 ## Requirements
 

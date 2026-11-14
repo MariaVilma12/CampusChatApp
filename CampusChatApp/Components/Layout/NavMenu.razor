@@ -26,6 +26,13 @@
         </div>
 
         <div class="nav-item">
+            <NavLink class="nav-link" href="/people">
+                <span class="bi bi-people-fill me-2"></span>
+                People
+            </NavLink>
+        </div>
+
+        <div class="nav-item">
             <NavLink class="nav-link" href="/profile">
                 <span class="bi bi-person-circle me-2"></span>
                 Profile
@@ -88,7 +95,7 @@
     private async Task SignOut()
     {
         await SessionService.LogoutAsync();
-        Navigation.NavigateTo("/signin");
+        Navigation.NavigateTo("/");
     }
 
     public void Dispose()

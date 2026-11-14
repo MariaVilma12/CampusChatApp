@@ -64,7 +64,16 @@ else
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div>
-                                <strong>@(author?.DisplayName ?? post.AuthorName)</strong>
+                                <strong>
+                                    @if (author is not null)
+                                    {
+                                        <a href="/profiles/@author.Id">@author.DisplayName</a>
+                                    }
+                                    else
+                                    {
+                                        @post.AuthorName
+                                    }
+                                </strong>
                                 <div class="small text-muted">@post.CreatedAt.ToLocalTime().ToString("g")</div>
                             </div>
                             @if (canDeletePost)
@@ -78,7 +87,7 @@ else
                             foreach (var reply in post.Replies)
                             {
                                 <div class="border-start border-2 ps-3 ms-3 my-2">
-                                    <small class="text-muted">Reply by @reply.AuthorName · @reply.CreatedAt.ToLocalTime().ToString("g")</small>
+                                    <small class="text-muted">Reply by <a href="/profiles/@reply.AuthorId">@reply.AuthorName</a> · @reply.CreatedAt.ToLocalTime().ToString("g")</small>
                                     <p class="mb-0">@reply.Text</p>
                                 </div>
                             }
@@ -129,6 +138,7 @@ else
     private string _enteredCode = string.Empty;
     private Dictionary<int, string> _replyTextByPost = new();
     private bool _hasLoadedSession;
+    private bool _disposed;
 
     protected override Task OnParametersSetAsync()
     {
@@ -152,15 +162,21 @@ else
 
     private async void HandleDataChanged()
     {
-        _thread = ThreadService.GetThread(Id);
-        UpdateUnreadToZero();
-        await InvokeAsync(StateHasChanged);
+        await InvokeAsync(() =>
+        {
+            if (_disposed)
+                return;
+
+            _thread = ThreadService.GetThread(Id);
+            UpdateUnreadToZero();
+            StateHasChanged();
+        });
     }
 
     public void Dispose()
     {
+        _disposed = true;
         CampusChatStateService.DataChanged -= HandleDataChanged;
-        UpdateUnreadToZero();
     }
 
     private string GetReplyText(int postId)
@@ -180,6 +196,7 @@ else
 
         if (ThreadService.TryJoinPrivateThread(_thread.Id, _enteredCode, _currentUser))
         {
+            CampusChatStateService.NotifyChanged();
             NavigationManager.NavigateTo($"/threads/{_thread.Id}", forceLoad: true);
         }
         else
@@ -190,11 +207,11 @@ else
 
     private void UpdateUnreadToZero()
     {
-        if (_currentUser is null || _thread is null || (_currentUser.IsAuditUser && _thread.IsPrivate))
+        if (_currentUser is null || _thread is null || !SessionService.CanAccessThread(_thread, _currentUser))
             return;
 
-        if (_currentUser.JoinedThreadIds.Contains(_thread.Id))
-            _currentUser.UnreadThreadCounts[_thread.Id] = 0;
+        if (ThreadService.MarkThreadAsOpened(_currentUser, _thread.Id))
+            CampusChatStateService.NotifyChanged();
     }
 
     private async Task AddPost()
@@ -216,7 +233,6 @@ else
 
         var post = new Post
         {
-            Id = _thread.Posts.Count == 0 ? 1 : _thread.Posts.Max(p => p.Id) + 1,
             AuthorId = _currentUser.Id,
             AuthorName = _currentUser.DisplayName,
             Text = _newPostText.Trim(),
@@ -225,14 +241,6 @@ else
         };
 
         ThreadService.AddPost(_thread.Id, post);
-
-        foreach (var user in AppStore.Users.Where(u => u.JoinedThreadIds.Contains(_thread.Id) && u.Id != _currentUser.Id))
-        {
-            if (!user.UnreadThreadCounts.ContainsKey(_thread.Id))
-                user.UnreadThreadCounts[_thread.Id] = 0;
-
-            user.UnreadThreadCounts[_thread.Id] += 1;
-        }
 
         _newPostText = string.Empty;
         _errorMessage = string.Empty;

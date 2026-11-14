@@ -1,0 +1,61 @@
+@page "/people"
+@layout MainLayout
+@using CampusChatApp.Models
+@using CampusChatApp.Services
+@inject SessionService SessionService
+@inject UserService UserService
+
+<PageTitle>People</PageTitle>
+
+<div class="container py-4">
+    <h1 class="h3 mb-4">People</h1>
+    @if (_currentUser is null)
+    {
+        <div class="alert alert-warning">Please sign in to browse people.</div>
+    }
+    else
+    {
+        <label class="form-label" for="people-search">Search people</label>
+        <input id="people-search" class="form-control mb-3" @bind="_searchText" @bind:event="oninput" placeholder="Search by name" />
+        var people = UserService.GetAllUsers()
+            .Where(user => user.Id != _currentUser.Id &&
+                (string.IsNullOrWhiteSpace(_searchText) ||
+                 user.DisplayName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(user => user.DisplayName)
+            .ToList();
+
+        @if (people.Count == 0)
+        {
+            <p class="text-muted">No people found.</p>
+        }
+        else
+        {
+            <div class="list-group">
+                @foreach (var person in people)
+                {
+                    <a class="list-group-item list-group-item-action" href="/profiles/@person.Id">
+                        <strong>@person.DisplayName</strong>
+                        @if (!string.IsNullOrWhiteSpace(person.CourseStudying))
+                        {
+                            <span class="text-muted"> · @person.CourseStudying</span>
+                        }
+                    </a>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private User? _currentUser;
+    private string _searchText = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        _currentUser = await SessionService.GetCurrentUserAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+}

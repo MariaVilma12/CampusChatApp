@@ -63,7 +63,7 @@
                                                   style="width: 36px; height: 36px; background: @recipient.AvatarColor;">
                                                 @recipient.DisplayName.Substring(0, 1).ToUpperInvariant()
                                             </span>
-                                            <span>@recipient.DisplayName</span>
+                                            <a href="/profiles/@recipient.Id">@recipient.DisplayName</a>
                                         </span>
                                         <button class="btn btn-sm btn-primary" @onclick="() => OpenChat(recipient)">Chat</button>
                                     </div>

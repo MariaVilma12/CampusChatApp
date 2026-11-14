@@ -4,6 +4,7 @@
 @using CampusChatApp.Services
 @inject SessionService SessionService
 @inject ThreadService ThreadService
+@inject CampusChatStateService CampusChatStateService
 @inject NavigationManager Navigation
 
 <PageTitle>Join Private Thread</PageTitle>
@@ -81,8 +82,8 @@
             return;
         }
 
-        if (!_currentUser.JoinedThreadIds.Contains(threadId))
-            _currentUser.JoinedThreadIds.Add(threadId);
+        if (ThreadService.JoinThread(threadId, _currentUser))
+            CampusChatStateService.NotifyChanged();
 
         _message = $"You joined '{thread.Name}'.";
         _isSuccess = true;

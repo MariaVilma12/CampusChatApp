@@ -6,9 +6,31 @@ namespace CampusChatApp.Services;
 
 public class UserService
 {
+    private readonly object _userCreationLock = new();
+
     public static IReadOnlyList<User> GetAllUsers() => AppStore.Users;
 
     public User? GetUser(int id) => AppStore.Users.FirstOrDefault(u => u.Id == id);
+
+    public User CreateProfile(string displayName, string about, string courseStudying, int? studyYear, string avatarColor)
+    {
+        var profile = ValidateAndNormalizeProfile(displayName, about, courseStudying, studyYear, avatarColor);
+
+        lock (_userCreationLock)
+        {
+            var user = new User
+            {
+                Id = AppStore.Users.Count == 0 ? 1 : AppStore.Users.Max(u => u.Id) + 1,
+                DisplayName = profile.displayName,
+                About = profile.about,
+                CourseStudying = profile.courseStudying,
+                StudyYear = profile.studyYear,
+                AvatarColor = profile.avatarColor
+            };
+            AppStore.Users.Add(user);
+            return user;
+        }
+    }
 
     public User UpdateProfile(User user, string displayName, string about, string courseStudying, int? studyYear, string avatarColor)
     {
