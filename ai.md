@@ -62,4 +62,5 @@ Because of this, every AI-generated suggestion was reviewed, tested, and adapted
 
 ## Reflection
 
+
 AI was used as a learning and productivity tool rather than a replacement for my own work. It helped me better understand Blazor development, organize the project, and solve implementation problems more efficiently. The final application reflects my own testing, debugging, and integration of the generated suggestions.
