@@ -51,7 +51,7 @@ Ordinary profiles can read public threads without joining and can post and reply
 
 `ChatService` stores one conversation per pair of users, reusing an existing chat instead of creating duplicates. The Messages page opens multiple small chat windows, so users can follow several conversations without leaving the people list. The auditor's review page lists conversations and opens them read-only; ordinary users see their own conversations.
 
-Changes made through the interface notify subscribed components via `CampusChatStateService`, so open thread and chat views can refresh without a manual reload. This is an in-process notification mechanism, not durable messaging or a guarantee across multiple server instances.
+Thread and messaging changes made through the interface notify subscribed components via `CampusChatStateService`, so open thread and chat views can refresh without a manual reload. This is an in-process notification mechanism, not durable messaging or a guarantee across multiple server instances.
 
 ## Future improvements
 

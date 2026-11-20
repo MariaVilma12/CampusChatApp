@@ -2,23 +2,23 @@
 
 **1. Personal data**
 
-The app holds profile details, posts, replies, direct messages, thread memberships, and unread post IDs. It does not record when a user joined or last read a thread. Do not enter real personal or sensitive data.
+The app holds each profile's ID, display name, role, About text, course, study year, avatar colour, and audit-role flag. It also holds thread memberships and unread post IDs; post and reply text, author IDs and names, and timestamps; and direct-chat participant IDs, message text, sender IDs and names, and timestamps. The selected profile ID is kept in protected browser session storage. The app does not record when a user joined or last read a thread. Do not enter real personal or sensitive data.
 
 **2. Chat retention**
 
-Chats exist only in server memory and disappear on restart. A possible future policy is deletion one year after the last message; this is not implemented.
+The proposed product policy is to delete a direct chat 12 months after its last message. A year gives participants time to refer back to recent conversations while limiting indefinite retention. This policy is not implemented: in the demo, chats remain in server memory only until the app process stops or restarts.
 
 **3. A student leaves**
 
-Profile deletion and post anonymisation are not implemented. A future option is to delete the profile and retain posts under “Former student”, subject to an agreed retention policy.
+Leaving college does not trigger any action in this app. Profile deletion and post anonymisation are not implemented, so the profile and its posts remain in server memory until the app process stops or restarts. A production policy must decide whether to delete or anonymise them and how long to retain them.
 
 **4. Abuse**
 
-Authors can delete their own posts; there is no reporting, moderator removal, or evidence-preservation feature. A production system needs a reporting and review process that protects evidence.
+In the current app, only the post's author can remove it; there is no reporting or moderation feature. Under the proposed product policy, a designated college moderator decides whether reported content violates the rules and should be removed. That review and moderator role are not implemented yet; a production service needs a clear process that protects evidence.
 
 **5. Direct chat privacy**
 
-The chat page checks whether a selected profile is a participant or the auditor. These are demo checks, not a security boundary: anyone can select any profile, including the seeded Community Reviewer. The app does not notify participants of auditor access, and messages are not encrypted in memory. Do not expose it to untrusted networks.
+The chat page checks whether the selected profile is a participant or the auditor. These are demo checks, not a security boundary: anyone can select any profile, including the seeded **Community Reviewer** auditor profile. The app does not notify the two participants when the auditor reads their chat, and messages are not encrypted in memory. Do not expose it to untrusted networks.
 
 **6. Logging**
 
